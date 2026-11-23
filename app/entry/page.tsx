@@ -11,11 +11,11 @@ export const dynamic = 'force-dynamic';
 export default async function EntryPage({
   searchParams,
 }: {
-  searchParams: { day?: string };
+  searchParams: Promise<{ day?: string }>;
 }) {
   const [cells, entryOpen] = await Promise.all([getCalendar(), isEntryOpen()]);
 
-  const raw = Number(searchParams.day);
+  const raw = Number((await searchParams).day);
   const day = Number.isInteger(raw) && raw >= 1 && raw <= 25 ? raw : null;
   const cell = day ? cells.find((c) => c.day === day) : null;
 

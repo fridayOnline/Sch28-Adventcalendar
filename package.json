@@ -7,27 +7,25 @@
     "dev:mock": "NEXT_DIST_DIR=.next-mock DEV_MOCK_DATA=1 DEV_NOW=${DEV_NOW:-2026-12-12T09:00:00+09:00} next dev -p ${PORT:-3100}",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "test": "vitest run"
   },
   "dependencies": {
     "@emoji-mart/data": "1.2.1",
-    "@emoji-mart/react": "1.1.1",
     "@supabase/supabase-js": "2.45.4",
     "bcryptjs": "2.4.3",
     "emoji-mart": "5.6.0",
     "jose": "5.9.6",
-    "next": "14.2.15",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "sharp": "0.33.5",
-    "zod": "3.23.8"
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "2.4.6",
     "@types/node": "20.16.11",
-    "@types/react": "18.3.11",
-    "@types/react-dom": "18.3.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "typescript": "5.6.3",
     "vitest": "2.1.3"
   }

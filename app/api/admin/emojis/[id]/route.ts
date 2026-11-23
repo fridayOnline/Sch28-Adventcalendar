@@ -5,7 +5,7 @@ import { requireAdmin } from '@/lib/requireAdmin';
 import { withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /** カスタム絵文字の削除。その絵文字で付いていたリアクションも消える（ON DELETE CASCADE） */
 export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: Ctx) => {
@@ -15,7 +15,7 @@ export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: Ct
   const { data, error } = await supabase
     .from('custom_emojis')
     .delete()
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .select('path')
     .maybeSingle();
   if (error) throw error;

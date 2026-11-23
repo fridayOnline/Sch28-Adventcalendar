@@ -12,6 +12,6 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const { password } = await parseBody(req, adminLoginSchema);
   if (!checkAdminPassword(password)) throw apiError('WRONG_PASSWORD');
 
-  cookies().set(ADMIN_COOKIE, await createSession(), sessionCookieOptions);
+  (await cookies()).set(ADMIN_COOKIE, await createSession(), sessionCookieOptions);
   return new Response(null, { status: 204 });
 });

@@ -5,10 +5,10 @@ import { parseDay, withErrorHandling } from '@/lib/request';
 
 export const dynamic = 'force-dynamic';
 
-type Ctx = { params: { day: string } };
+type Ctx = { params: Promise<{ day: string }> };
 
 export const GET = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   const clientId = req.nextUrl.searchParams.get('clientId') ?? undefined;
 
   const detail = await getDayDetail(day, clientId);

@@ -9,11 +9,11 @@ import { getIpHash, parseBody, parseDay, withErrorHandling } from '@/lib/request
 import { db } from '@/lib/supabase';
 import { passwordOnlySchema, reserveSchema, updateSlotSchema } from '@/lib/validation';
 
-type Ctx = { params: { day: string } };
+type Ctx = { params: Promise<{ day: string }> };
 
 /** 枠の予約 */
 export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
 
   if (!(await isEntryOpen())) throw apiError('ENTRY_CLOSED');
   if (await hitRateLimit(getIpHash(req), 'reserve')) throw apiError('RATE_LIMITED');
@@ -51,7 +51,7 @@ async function loadSlotOrThrow(day: number, editPassword: string) {
 
 /** 記事の登録・編集 */
 export const PUT = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   const { editPassword, title, url } = await parseBody(req, updateSlotSchema);
   await loadSlotOrThrow(day, editPassword);
 
@@ -65,7 +65,7 @@ export const PUT = withErrorHandling(async (req: NextRequest, { params }: Ctx) =
 
 /** 予約の取り消し */
 export const DELETE = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   const { editPassword } = await parseBody(req, passwordOnlySchema);
   await loadSlotOrThrow(day, editPassword);
 

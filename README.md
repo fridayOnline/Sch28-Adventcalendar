@@ -5,7 +5,7 @@
 
 ## 技術構成
 
-Next.js 14（App Router）+ Supabase（PostgreSQL）+ Vercel。
+Next.js 16（App Router・React 19）+ Supabase（PostgreSQL）+ Vercel。
 ブラウザが Supabase に直接つながることはない。ページは Server Components が DB を読んで HTML を返し、
 書き込みは Route Handlers が検証してから service role キーで DB に書く。
 

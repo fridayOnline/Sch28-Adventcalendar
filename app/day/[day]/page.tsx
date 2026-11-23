@@ -12,8 +12,8 @@ export const revalidate = 60;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-export default async function DayPage({ params }: { params: { day: string } }) {
-  const day = Number(params.day);
+export default async function DayPage({ params }: { params: Promise<{ day: string }> }) {
+  const day = Number((await params).day);
   if (!Number.isInteger(day) || day < 1 || day > 25) notFound();
 
   const cells = await getCalendar();

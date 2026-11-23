@@ -6,12 +6,12 @@ import { parseBody, parseDay, withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 import { adminSlotPatchSchema } from '@/lib/validation';
 
-type Ctx = { params: { day: string } };
+type Ctx = { params: Promise<{ day: string }> };
 
 /** 渡された項目だけ更新 */
 export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
   await requireAdmin();
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   const patch = await parseBody(req, adminSlotPatchSchema);
 
   const update: Record<string, unknown> = {};
@@ -41,7 +41,7 @@ export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx)
 /** 公開後でも削除できる（コメント・リアクションも消える） */
 export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: Ctx) => {
   await requireAdmin();
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
 
   const { error } = await db().from('slots').delete().eq('day', day);
   if (error) throw error;

@@ -7,10 +7,10 @@ import { getIpHash, parseBody, parseDay, withErrorHandling } from '@/lib/request
 import { db } from '@/lib/supabase';
 import { commentSchema } from '@/lib/validation';
 
-type Ctx = { params: { day: string } };
+type Ctx = { params: Promise<{ day: string }> };
 
 export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   if (!isPublished(day)) throw apiError('NOT_PUBLISHED');
 
   const supabase = db();
