@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import BoxArt, { Bow, SantaHat, Sweet } from '@/components/BoxArt';
+import BoxArt, { Bow, Flap, SantaHat, Sweet } from '@/components/BoxArt';
 import { weekdayEn } from '@/lib/publish';
 import type { CalendarCell } from '@/types';
 
@@ -23,11 +23,13 @@ const HeartIcon = () => (
 export default function DayCell({ cell }: { cell: CalendarCell }) {
   const { day, state, authorName, title, commentCount, reactionCount, isToday } = cell;
   const delay = `${(0.04 + (day - 1) * 0.045).toFixed(3)}s`;
+  // 箱が開き始める時刻。登場し終わってから 1日目→N日目 の順に 0.12s ずつずらして開く
+  const openAt = `${(0.7 + (day - 1) * 0.12).toFixed(2)}s`;
   const dateEn = `12/${pad2(day)} ${weekdayEn(day)}${isToday ? ' · TODAY' : ''}`;
   const titleText = title ?? '記事準備中';
 
   return (
-    <div className={`cell${isToday ? ' today' : ''}`} style={{ ['--d' as string]: delay } as React.CSSProperties}>
+    <div className={`cell${isToday ? ' today' : ''}`} style={{ ['--d' as string]: delay, ['--o' as string]: openAt } as React.CSSProperties}>
       {/* ===== PC：箱 ===== */}
       <div className="cell-pc">
         {state === 'open' && (
@@ -56,10 +58,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
         )}
 
         {state === 'published' && (
-          <Link className="bx bx-pub" href={`/day/${day}`} aria-label={`12月${day}日 ${titleText}（${authorName}）`}>
-            <span className="lid" aria-hidden="true">
-              {pad2(day)}
-            </span>
+          <Link className="bx bx-pub opener" href={`/day/${day}`} aria-label={`12月${day}日 ${titleText}（${authorName}）`}>
             <span className="sweet" aria-hidden="true">
               <Sweet day={day} />
             </span>
@@ -74,6 +73,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
                 {reactionCount}
               </span>
             </span>
+            <Flap day={day} />
             {isToday && <SantaHat />}
           </Link>
         )}

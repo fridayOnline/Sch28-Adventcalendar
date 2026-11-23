@@ -105,15 +105,20 @@ function view(name: string): Row[] {
   }));
 }
 
+// 新しく書き込む行の時刻。DEV_NOW で固定した「今」を起点に、実際の経過時間だけ進める
+const BOOT = Date.now();
+const mockNow = () => new Date(currentTime().getTime() + (Date.now() - BOOT));
+
 function withDefaults(table: string, row: Row): Row {
-  const now = new Date().toISOString();
+  const now = mockNow().toISOString();
   switch (table) {
     case 'slots':
       return { title: null, url: null, hidden: false, created_at: now, updated_at: now, ...row };
     case 'comments':
       return { id: crypto.randomUUID(), name: '名無し', hidden: false, created_at: now, ...row };
     case 'rate_limits':
-      return { id: Date.now() + Math.random(), created_at: now, ...row };
+      // レート制限は実時計（lib/rateLimit.ts）と比べるので、ここだけ本当の時刻
+      return { id: Date.now() + Math.random(), created_at: new Date().toISOString(), ...row };
     default:
       return { created_at: now, ...row };
   }
@@ -207,7 +212,7 @@ class Query implements PromiseLike<Result> {
         rows = t[this.table].filter(this.match);
         for (const r of rows) {
           Object.assign(r, this.payload);
-          if (this.table === 'slots') r.updated_at = new Date().toISOString();
+          if (this.table === 'slots') r.updated_at = mockNow().toISOString();
         }
         break;
       }

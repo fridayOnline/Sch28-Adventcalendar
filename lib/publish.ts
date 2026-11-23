@@ -2,8 +2,15 @@ const YEAR = Number(process.env.EVENT_YEAR ?? 2026);
 
 export const eventYear = () => YEAR;
 
+/** 箱が開く時刻（JSTの時）。担当日のこの時刻に公開される */
+export const PUBLISH_HOUR = 6;
+/** 画面に出す「6:00」 */
+export const PUBLISH_TIME_LABEL = `${PUBLISH_HOUR}:00`;
+
 export const publishAt = (day: number) =>
-  new Date(`${YEAR}-12-${String(day).padStart(2, '0')}T00:00:00+09:00`);
+  new Date(
+    `${YEAR}-12-${String(day).padStart(2, '0')}T${String(PUBLISH_HOUR).padStart(2, '0')}:00:00+09:00`,
+  );
 
 /**
  * 「今」。開発時だけ環境変数 DEV_NOW（例: 2026-12-12T09:00:00+09:00）で固定できる。

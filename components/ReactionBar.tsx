@@ -69,7 +69,7 @@ export default function ReactionBar({
   }
 
   return (
-    <section aria-label="リアクション" style={{ marginTop: 72, padding: 28, borderRadius: 16, background: 'rgba(251,243,230,.8)' }}>
+    <section aria-label="リアクション" className="reaction-card">
       <h2 style={{ margin: '0 0 16px', fontSize: 16 }}>リアクション</h2>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {EMOJIS.map((emoji) => {

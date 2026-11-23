@@ -5,7 +5,7 @@ import CommentSection from '@/components/CommentSection';
 import Countdown from '@/components/Countdown';
 import ReactionBar from '@/components/ReactionBar';
 import { SiteFooter, SubHeader } from '@/components/SiteHeader';
-import { currentTime, isPublished, publishAt, weekdayJa } from '@/lib/publish';
+import { currentTime, isPublished, PUBLISH_TIME_LABEL, publishAt, weekdayJa } from '@/lib/publish';
 import { getCalendar, getDayDetail } from '@/lib/queries';
 
 export const revalidate = 60;
@@ -78,7 +78,7 @@ export default async function DayPage({ params }: { params: { day: string } }) {
               <>
                 <h1 className="detail-soon">Coming soon</h1>
                 <p style={{ margin: '16px 0 0', fontSize: 16, lineHeight: 1.8, color: 'var(--ink-sub)' }}>
-                  <b style={{ color: 'var(--ink)' }}>{cell.authorName}</b> さんの箱は {dateLabel} 0:00 に開きます。
+                  <b style={{ color: 'var(--ink)' }}>{cell.authorName}</b> さんの箱は {dateLabel} {PUBLISH_TIME_LABEL} に開きます。
                 </p>
                 <Countdown target={publishAt(day).toISOString()} now={currentTime().toISOString()} />
                 <p style={{ marginTop: 18 }}>
