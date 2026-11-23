@@ -1,12 +1,13 @@
 import 'server-only';
 import { db } from '@/lib/supabase';
 
-type Action = 'reserve' | 'comment' | 'reaction' | 'admin_login';
+type Action = 'reserve' | 'comment' | 'reaction' | 'emoji_upload' | 'admin_login';
 
 const LIMITS: Record<Action, { max: number; windowSec: number }> = {
   reserve: { max: 5, windowSec: 10 * 60 },
   comment: { max: 3, windowSec: 60 },
   reaction: { max: 30, windowSec: 60 },
+  emoji_upload: { max: 5, windowSec: 60 * 60 },
   admin_login: { max: 5, windowSec: 10 * 60 },
 };
 

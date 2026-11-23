@@ -1,14 +1,3 @@
-export const EMOJIS = ['👍', '🎉', '😂', '🔥', '❤️'] as const;
-export type Emoji = (typeof EMOJIS)[number];
-
-export const EMOJI_LABELS: Record<Emoji, string> = {
-  '👍': 'いいね',
-  '🎉': 'おめでとう',
-  '😂': 'わらった',
-  '🔥': 'アツい',
-  '❤️': 'すき',
-};
-
 export type SlotState = 'open' | 'reserved' | 'published';
 
 /** カレンダーの1マス（公開前は title/url が必ず null） */
@@ -30,7 +19,25 @@ export type Comment = {
   createdAt: string;
 };
 
-export type ReactionCounts = Record<Emoji, number>;
+/** アップロードされたカスタム絵文字 */
+export type CustomEmoji = {
+  id: string;
+  name: string;
+  url: string;
+};
+
+/** 1つの絵文字ぶんのリアクション（件数0のものは返さない） */
+export type ReactionItem = {
+  /** reactions.emoji の値。Unicode 絵文字か "c:<id>" */
+  key: string;
+  /** Unicode 絵文字のとき */
+  emoji: string | null;
+  /** カスタム絵文字のとき */
+  custom: CustomEmoji | null;
+  count: number;
+  /** このブラウザ（clientId）が押しているか */
+  mine: boolean;
+};
 
 export type DayDetail = {
   day: number;
@@ -38,8 +45,7 @@ export type DayDetail = {
   title: string | null;
   url: string | null;
   comments: Comment[];
-  reactions: ReactionCounts;
-  myReactions: Emoji[];
+  reactions: ReactionItem[];
 };
 
 export type ErrorCode =
@@ -50,6 +56,7 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'NOT_PUBLISHED'
   | 'SLOT_TAKEN'
+  | 'EMOJI_NAME_TAKEN'
   | 'ALREADY_PUBLISHED'
   | 'RATE_LIMITED'
   | 'INTERNAL_ERROR';
@@ -77,8 +84,15 @@ export type AdminComment = {
   createdAt: string;
 };
 
+export type AdminCustomEmoji = CustomEmoji & {
+  createdAt: string;
+  /** この絵文字で付いているリアクションの数 */
+  useCount: number;
+};
+
 export type AdminOverview = {
   slots: AdminSlot[];
   comments: AdminComment[];
+  customEmojis: AdminCustomEmoji[];
   entryOpen: boolean;
 };

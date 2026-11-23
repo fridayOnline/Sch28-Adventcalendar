@@ -3,6 +3,7 @@ import {
   adminSlotPatchSchema,
   commentSchema,
   daySchema,
+  emojiNameSchema,
   reactionSchema,
   reserveSchema,
   updateSlotSchema,
@@ -66,16 +67,38 @@ describe('commentSchema', () => {
 });
 
 describe('reactionSchema', () => {
-  it('5種以外の絵文字を弾く', () => {
-    expect(reactionSchema.safeParse({ emoji: '🍣', clientId: UUID }).success).toBe(false);
+  it('5種類以外の絵文字も通す（Slack 式）', () => {
+    expect(reactionSchema.safeParse({ emoji: '🍣', clientId: UUID }).success).toBe(true);
+    expect(reactionSchema.safeParse({ emoji: '👍🏽', clientId: UUID }).success).toBe(true);
+  });
+
+  it('絵文字ではない文字や、2文字以上を弾く', () => {
+    expect(reactionSchema.safeParse({ emoji: 'a', clientId: UUID }).success).toBe(false);
+    expect(reactionSchema.safeParse({ emoji: '👍👍', clientId: UUID }).success).toBe(false);
+    expect(reactionSchema.safeParse({ emoji: '<script>', clientId: UUID }).success).toBe(false);
+  });
+
+  it('カスタム絵文字は UUID で指定する', () => {
+    expect(reactionSchema.safeParse({ customEmojiId: UUID, clientId: UUID }).success).toBe(true);
+    expect(reactionSchema.safeParse({ customEmojiId: 'party', clientId: UUID }).success).toBe(false);
+  });
+
+  it('emoji と customEmojiId はどちらか1つだけ', () => {
+    expect(reactionSchema.safeParse({ clientId: UUID }).success).toBe(false);
+    expect(reactionSchema.safeParse({ emoji: '👍', customEmojiId: UUID, clientId: UUID }).success).toBe(false);
   });
 
   it('UUIDでない clientId を弾く', () => {
     expect(reactionSchema.safeParse({ emoji: '👍', clientId: 'abc' }).success).toBe(false);
   });
+});
 
-  it('正しい組み合わせを通す', () => {
-    expect(reactionSchema.safeParse({ emoji: '❤️', clientId: UUID }).success).toBe(true);
+describe('emojiNameSchema', () => {
+  it('英小文字・数字・_ - の32文字まで（大文字は小文字にそろえる）', () => {
+    expect(emojiNameSchema.safeParse('Party-Parrot').data).toBe('party-parrot');
+    expect(emojiNameSchema.safeParse('a'.repeat(33)).success).toBe(false);
+    expect(emojiNameSchema.safeParse('すし').success).toBe(false);
+    expect(emojiNameSchema.safeParse('').success).toBe(false);
   });
 });
 

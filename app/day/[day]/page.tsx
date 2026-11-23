@@ -39,40 +39,46 @@ export default async function DayPage({ params }: { params: { day: string } }) {
           <BoxArt day={day} state={cell.state} size="big" />
 
           <div className="detail-text">
-            <p className="label" style={{ marginBottom: 14, letterSpacing: '.16em' }}>
-              DAY {pad2(day)} · {dateLabel}
-            </p>
+            {/* 日付（左）と、執筆者向けの「編集」ボタン（右端。カレンダーの箱の「編集」と同じ見た目） */}
+            <div className="detail-kicker">
+              <p className="label">
+                DAY {pad2(day)} · {dateLabel}
+              </p>
+              <Link className="edit-pill" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+                  <path d="M13.5 6.5l4 4" />
+                </svg>
+                編集
+              </Link>
+            </div>
 
             {detail ? (
               <>
                 <h1 className="detail-title">
                   {detail.title ?? '記事準備中'}
                 </h1>
-                <p style={{ margin: '14px 0 28px', fontSize: 15, color: 'var(--ink-sub)' }}>
-                  by <b style={{ color: 'var(--ink)' }}>{detail.authorName}</b>
-                </p>
-                {detail.url ? (
-                  <>
+                {/* 記事を読むボタン（左）と著者名（右端）を1行に並べる */}
+                <div className="detail-actions">
+                  {detail.url ? (
                     <a className="btn" href={detail.url} target="_blank" rel="noopener noreferrer">
                       記事を読む
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M7 17L17 7M8 7h9v9" />
                       </svg>
                     </a>
-                    <p className="hint" style={{ marginTop: 12 }}>
-                      外部サイト（{linkHost}）が新しいタブで開きます
-                    </p>
-                  </>
-                ) : (
-                  <p style={{ margin: 0, fontSize: 15, color: 'var(--ink-sub)' }}>
-                    記事はまだ登録されていません。コメントとリアクションは送れます。
+                  ) : (
+                    <p className="detail-nourl">記事はまだ登録されていません。コメントとリアクションは送れます。</p>
+                  )}
+                  <p className="detail-author">
+                    by <b>{detail.authorName}</b>
+                  </p>
+                </div>
+                {detail.url && (
+                  <p className="hint" style={{ marginTop: 10 }}>
+                    外部サイト（{linkHost}）が新しいタブで開きます
                   </p>
                 )}
-                <p style={{ marginTop: 18 }}>
-                  <Link className="back-link" href={`/edit?day=${day}`}>
-                    この枠を編集する
-                  </Link>
-                </p>
               </>
             ) : (
               <>
@@ -81,11 +87,6 @@ export default async function DayPage({ params }: { params: { day: string } }) {
                   <b style={{ color: 'var(--ink)' }}>{cell.authorName}</b> さんの箱は {dateLabel} {PUBLISH_TIME_LABEL} に開きます。
                 </p>
                 <Countdown target={publishAt(day).toISOString()} now={currentTime().toISOString()} />
-                <p style={{ marginTop: 18 }}>
-                  <Link className="back-link" href={`/edit?day=${day}`}>
-                    この枠を編集する
-                  </Link>
-                </p>
               </>
             )}
           </div>

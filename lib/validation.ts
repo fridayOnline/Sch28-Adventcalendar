@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EMOJIS } from '@/types';
+import { EMOJI_NAME_RE, isSingleEmoji } from '@/lib/emoji';
 
 export const daySchema = z.coerce.number().int().min(1).max(25);
 
@@ -37,10 +37,22 @@ export const commentSchema = z.object({
   body: trimmed(280).min(1),
 });
 
-export const reactionSchema = z.object({
-  emoji: z.enum(EMOJIS),
-  clientId: z.string().uuid(),
-});
+/** Unicode 絵文字（emoji）かカスタム絵文字（customEmojiId）のどちらか1つ */
+export const reactionSchema = z
+  .object({
+    clientId: z.string().uuid(),
+    emoji: z.string().max(40).refine(isSingleEmoji, '絵文字を1つ選んでください').optional(),
+    customEmojiId: z.string().uuid().optional(),
+  })
+  .refine((v) => Number(!!v.emoji) + Number(!!v.customEmojiId) === 1, {
+    message: 'emoji か customEmojiId のどちらか1つを指定してください',
+  });
+
+export const emojiNameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(EMOJI_NAME_RE, '名前は半角英小文字・数字・_ - の32文字までです');
 
 export const adminSlotPatchSchema = z.object({
   authorName: trimmed(30).min(1).optional(),

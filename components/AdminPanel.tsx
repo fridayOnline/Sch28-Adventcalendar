@@ -374,6 +374,61 @@ export default function AdminPanel() {
             </table>
           </div>
         </section>
+
+        <section className="card" style={{ background: '#fff', padding: 24 }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 18 }}>カスタム絵文字（新しい順）</h2>
+          <p className="hint" style={{ marginBottom: 14 }}>
+            誰でも画像から登録できます。不適切なものは削除してください（その絵文字で付いたリアクションも消えます）。
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>画像</th>
+                  <th>名前</th>
+                  <th>使われた数</th>
+                  <th>登録</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.customEmojis.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ color: 'var(--ink-muted)' }}>
+                      まだカスタム絵文字はありません
+                    </td>
+                  </tr>
+                )}
+                {data.customEmojis.map((e) => (
+                  <tr key={e.id}>
+                    <td>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={e.url} alt="" width={32} height={32} style={{ display: 'block', objectFit: 'contain' }} />
+                    </td>
+                    <td style={{ fontWeight: 700, fontFamily: 'var(--font-en)' }}>:{e.name}:</td>
+                    <td style={{ font: '700 14px var(--font-en)' }}>{e.useCount}</td>
+                    <td style={{ font: '600 12px var(--font-en)', color: 'var(--ink-muted)', whiteSpace: 'nowrap' }}>
+                      {formatAt(e.createdAt)}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="act act-danger"
+                        disabled={busy}
+                        onClick={() => {
+                          if (!confirm(`:${e.name}: を削除します。この絵文字のリアクション（${e.useCount}件）も消えます。よろしいですか？`)) return;
+                          run(() => call(`/api/admin/emojis/${e.id}`, { method: 'DELETE' }));
+                        }}
+                      >
+                        削除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </>
   );
