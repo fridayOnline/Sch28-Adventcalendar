@@ -1,16 +1,17 @@
 import 'server-only';
 import { db } from '@/lib/supabase';
 import { currentTime, isPublished, todayDay } from '@/lib/publish';
-import { EMOJIS } from '@/types';
+import { isCustomKey } from '@/lib/emoji';
 import type {
   AdminComment,
+  AdminCustomEmoji,
   AdminOverview,
   AdminSlot,
   CalendarCell,
   Comment,
+  CustomEmoji,
   DayDetail,
-  Emoji,
-  ReactionCounts,
+  ReactionItem,
   SlotState,
 } from '@/types';
 
@@ -24,8 +25,67 @@ type SummaryRow = {
   reaction_count: number;
 };
 
-const emptyCounts = (): ReactionCounts =>
-  Object.fromEntries(EMOJIS.map((e) => [e, 0])) as ReactionCounts;
+/** Storage の emojis バケットにある画像の公開URL */
+export const emojiUrl = (path: string) => db().storage.from('emojis').getPublicUrl(path).data.publicUrl;
+
+type CustomEmojiRow = { id: string; name: string; path: string; created_at: string };
+const toCustomEmoji = (r: CustomEmojiRow): CustomEmoji => ({ id: r.id, name: r.name, url: emojiUrl(r.path) });
+
+/** ピッカーに出すカスタム絵文字（古い順） */
+export async function listCustomEmojis(): Promise<CustomEmoji[]> {
+  const { data, error } = await db()
+    .from('custom_emojis')
+    .select('id, name, path, created_at')
+    .order('created_at', { ascending: true })
+    .limit(500);
+  if (error) throw error;
+  return ((data ?? []) as CustomEmojiRow[]).map(toCustomEmoji);
+}
+
+/**
+ * その日のリアクションを絵文字ごとにまとめる。最初に押された順に並べる（Slack と同じ）。
+ * clientId を渡すと、そのブラウザが押しているかどうか（mine）も付ける。
+ */
+export async function getReactionItems(day: number, clientId?: string): Promise<ReactionItem[]> {
+  const supabase = db();
+  const { data, error } = await supabase
+    .from('reactions')
+    .select('emoji, client_id, custom_emoji_id, created_at')
+    .eq('day', day);
+  if (error) throw error;
+
+  type Group = { key: string; count: number; mine: boolean; first: string; customId: string | null };
+  const groups = new Map<string, Group>();
+  for (const r of data ?? []) {
+    const key = r.emoji as string;
+    const g = groups.get(key) ?? { key, count: 0, mine: false, first: r.created_at as string, customId: (r.custom_emoji_id as string) ?? null };
+    g.count += 1;
+    if (clientId && r.client_id === clientId) g.mine = true;
+    if ((r.created_at as string) < g.first) g.first = r.created_at as string;
+    groups.set(key, g);
+  }
+
+  const customIds = [...groups.values()].map((g) => g.customId).filter((id): id is string => !!id);
+  const customs = new Map<string, CustomEmoji>();
+  if (customIds.length > 0) {
+    const { data: rows, error: e2 } = await supabase
+      .from('custom_emojis')
+      .select('id, name, path, created_at')
+      .in('id', customIds);
+    if (e2) throw e2;
+    for (const row of (rows ?? []) as CustomEmojiRow[]) customs.set(row.id, toCustomEmoji(row));
+  }
+
+  return [...groups.values()]
+    .sort((a, b) => (a.first < b.first ? -1 : a.first > b.first ? 1 : 0))
+    .flatMap((g): ReactionItem[] => {
+      if (isCustomKey(g.key)) {
+        const custom = g.customId ? customs.get(g.customId) : undefined;
+        return custom ? [{ key: g.key, emoji: null, custom, count: g.count, mine: g.mine }] : [];
+      }
+      return [{ key: g.key, emoji: g.key, custom: null, count: g.count, mine: g.mine }];
+    });
+}
 
 /** slot_summaries を読み1〜25日を埋める。公開前は title/url を null、hidden の枠は open 扱い */
 export async function getCalendar(now = currentTime()): Promise<CalendarCell[]> {
@@ -78,7 +138,7 @@ export async function getDayDetail(
   if (error) throw error;
   if (!slot || slot.hidden) return null;
 
-  const [{ data: commentRows }, { data: reactionRows }] = await Promise.all([
+  const [{ data: commentRows }, reactions] = await Promise.all([
     supabase
       .from('comments')
       .select('id, name, body, created_at')
@@ -86,7 +146,7 @@ export async function getDayDetail(
       .eq('hidden', false)
       .order('created_at', { ascending: false })
       .limit(100),
-    supabase.from('reactions').select('emoji, client_id').eq('day', day),
+    getReactionItems(day, clientId),
   ]);
 
   const comments: Comment[] = (commentRows ?? []).map((c) => ({
@@ -96,15 +156,6 @@ export async function getDayDetail(
     createdAt: c.created_at as string,
   }));
 
-  const reactions = emptyCounts();
-  const myReactions: Emoji[] = [];
-  for (const r of reactionRows ?? []) {
-    const emoji = r.emoji as Emoji;
-    if (!(emoji in reactions)) continue;
-    reactions[emoji] += 1;
-    if (clientId && r.client_id === clientId) myReactions.push(emoji);
-  }
-
   return {
     day: slot.day as number,
     authorName: slot.author_name as string,
@@ -112,30 +163,7 @@ export async function getDayDetail(
     url: slot.url as string | null,
     comments,
     reactions,
-    myReactions,
   };
-}
-
-/** その日の絵文字ごとの件数と、clientId が押したもの */
-export async function getReactionState(
-  day: number,
-  clientId: string,
-): Promise<{ reactions: ReactionCounts; myReactions: Emoji[] }> {
-  const { data, error } = await db()
-    .from('reactions')
-    .select('emoji, client_id')
-    .eq('day', day);
-  if (error) throw error;
-
-  const reactions = emptyCounts();
-  const myReactions: Emoji[] = [];
-  for (const r of data ?? []) {
-    const emoji = r.emoji as Emoji;
-    if (!(emoji in reactions)) continue;
-    reactions[emoji] += 1;
-    if (r.client_id === clientId) myReactions.push(emoji);
-  }
-  return { reactions, myReactions };
 }
 
 export async function isEntryOpen(): Promise<boolean> {
@@ -158,8 +186,13 @@ export async function setEntryOpen(open: boolean): Promise<void> {
 /** 全枠（公開前も含む）、全コメント（hidden も含む、新しい順）、entry_open */
 export async function getAdminOverview(now = currentTime()): Promise<AdminOverview> {
   const supabase = db();
-  const [{ data: summaries, error: e1 }, { data: commentRows, error: e2 }, entryOpen] =
-    await Promise.all([
+  const [
+    { data: summaries, error: e1 },
+    { data: commentRows, error: e2 },
+    entryOpen,
+    { data: emojiRows, error: e3 },
+    { data: customReactionRows, error: e4 },
+  ] = await Promise.all([
       supabase
         .from('slot_summaries')
         .select('day, author_name, title, url, hidden, comment_count, reaction_count')
@@ -170,9 +203,28 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
         .order('created_at', { ascending: false })
         .limit(500),
       isEntryOpen(),
+      supabase
+        .from('custom_emojis')
+        .select('id, name, path, created_at')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      supabase.from('reactions').select('custom_emoji_id'),
     ]);
   if (e1) throw e1;
   if (e2) throw e2;
+  if (e3) throw e3;
+  if (e4) throw e4;
+
+  const useCount = new Map<string, number>();
+  for (const r of customReactionRows ?? []) {
+    const id = r.custom_emoji_id as string | null;
+    if (id) useCount.set(id, (useCount.get(id) ?? 0) + 1);
+  }
+  const customEmojis: AdminCustomEmoji[] = ((emojiRows ?? []) as CustomEmojiRow[]).map((r) => ({
+    ...toCustomEmoji(r),
+    createdAt: r.created_at,
+    useCount: useCount.get(r.id) ?? 0,
+  }));
 
   const byDay = new Map<number, SummaryRow>();
   for (const r of (summaries ?? []) as SummaryRow[]) byDay.set(r.day, r);
@@ -214,5 +266,5 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
     createdAt: c.created_at as string,
   }));
 
-  return { slots, comments, entryOpen };
+  return { slots, comments, customEmojis, entryOpen };
 }

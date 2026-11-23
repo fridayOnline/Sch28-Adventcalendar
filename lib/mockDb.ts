@@ -1,4 +1,6 @@
 import 'server-only';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import bcrypt from 'bcryptjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { currentTime, eventYear, publishAt } from '@/lib/publish';
@@ -8,12 +10,14 @@ import { currentTime, eventYear, publishAt } from '@/lib/publish';
  * lib/ と app/api/ で使っている supabase-js のメソッドだけを真似して、Supabase に一切つながずに動かす。
  * データは dev サーバーのプロセス内にだけあり、再起動するとシードに戻る。
  * モックの枠の編集用パスワードはすべて MOCK_PASSWORD。
+ * Storage（カスタム絵文字の画像）もメモリに置き、公開URLの代わりに data: URL を返す（配信用のルートは要らない）。
  */
 
 export const MOCK_PASSWORD = 'test';
 
 type Row = Record<string, unknown>;
-type Tables = Record<'slots' | 'comments' | 'reactions' | 'settings' | 'rate_limits', Row[]>;
+type Tables = Record<'slots' | 'comments' | 'reactions' | 'custom_emojis' | 'settings' | 'rate_limits', Row[]>;
+type StoredObject = { body: Buffer; contentType: string };
 type Result = { data: unknown; error: { code?: string; message: string } | null; count?: number | null };
 
 // ---------- シードデータ ----------
@@ -50,11 +54,34 @@ const COMMENTS = [
   ['haru', 'これは沼ですね…'],
 ];
 const EMOJIS = ['👍', '🎉', '😂', '🔥', '❤️'];
+// Slack 式リアクションの確認用：5種類以外の絵文字と、カスタム絵文字（お菓子の画像を流用）
+const EXTRA_EMOJIS = ['🙌', '👀', '🍣'];
+const SEED_CUSTOM: [name: string, asset: string][] = [
+  ['candy', 'sweet_01.png'],
+  ['lollipop', 'sweet_03.png'],
+  ['choco', 'sweet_02.png'],
+];
 
 function seed(): Tables {
   const hash = bcrypt.hashSync(MOCK_PASSWORD, 4); // 開発用なので軽いコストで
   const now = currentTime();
-  const t: Tables = { slots: [], comments: [], reactions: [], settings: [], rate_limits: [] };
+  const t: Tables = { slots: [], comments: [], reactions: [], custom_emojis: [], settings: [], rate_limits: [] };
+
+  const customIds: string[] = [];
+  for (const [name, asset] of SEED_CUSTOM) {
+    const id = crypto.randomUUID();
+    const path = `${id}.png`;
+    try {
+      storage().set(`emojis/${path}`, {
+        body: readFileSync(join(process.cwd(), 'public/assets', asset)),
+        contentType: 'image/png',
+      });
+    } catch {
+      continue; // 素材が無ければカスタム絵文字のシードは省く
+    }
+    t.custom_emojis.push({ id, name, path, ip_hash: 'mock', created_at: new Date(Date.UTC(eventYear(), 10, 25)).toISOString() });
+    customIds.push(id);
+  }
 
   for (const [day, author, title] of SEED) {
     const at = new Date(Date.UTC(eventYear(), 10, 20 + (day % 7))).toISOString();
@@ -81,9 +108,23 @@ function seed(): Tables {
     EMOJIS.forEach((emoji, j) => {
       const n = (day * (j + 3)) % 7;
       for (let k = 0; k < n; k++) {
-        t.reactions.push({ day, emoji, client_id: crypto.randomUUID(), created_at: open.toISOString() });
+        t.reactions.push({ day, emoji, custom_emoji_id: null, client_id: crypto.randomUUID(), created_at: open.toISOString() });
       }
     });
+    // 偶数日には 5種類以外の絵文字とカスタム絵文字も付ける（少しあとに押された扱い）
+    if (day % 2 === 0) {
+      const later = new Date(open.getTime() + 60 * 60 * 1000).toISOString();
+      const extra = EXTRA_EMOJIS[day % EXTRA_EMOJIS.length];
+      for (let k = 0; k < 1 + (day % 3); k++) {
+        t.reactions.push({ day, emoji: extra, custom_emoji_id: null, client_id: crypto.randomUUID(), created_at: later });
+      }
+      const cid = customIds[day % Math.max(customIds.length, 1)];
+      if (cid) {
+        for (let k = 0; k < 1 + (day % 4); k++) {
+          t.reactions.push({ day, emoji: `c:${cid}`, custom_emoji_id: cid, client_id: crypto.randomUUID(), created_at: later });
+        }
+      }
+    }
   }
 
   t.settings.push({ key: 'entry_open', value: true });
@@ -91,8 +132,10 @@ function seed(): Tables {
 }
 
 // HMR でモジュールが読み直されてもデータが消えないよう globalThis に置く
-const g = globalThis as unknown as { __adventMockDb?: Tables };
+const g = globalThis as unknown as { __adventMockDb?: Tables; __adventMockStorage?: Map<string, StoredObject> };
+const storage = () => (g.__adventMockStorage ??= new Map());
 const tables = (): Tables => (g.__adventMockDb ??= seed());
+
 
 /** slot_summaries ビュー相当 */
 function view(name: string): Row[] {
@@ -116,6 +159,10 @@ function withDefaults(table: string, row: Row): Row {
       return { title: null, url: null, hidden: false, created_at: now, updated_at: now, ...row };
     case 'comments':
       return { id: crypto.randomUUID(), name: '名無し', hidden: false, created_at: now, ...row };
+    case 'custom_emojis':
+      return { id: crypto.randomUUID(), created_at: now, ...row };
+    case 'reactions':
+      return { custom_emoji_id: null, created_at: now, ...row };
     case 'rate_limits':
       // レート制限は実時計（lib/rateLimit.ts）と比べるので、ここだけ本当の時刻
       return { id: Date.now() + Math.random(), created_at: new Date().toISOString(), ...row };
@@ -156,6 +203,7 @@ class Query implements PromiseLike<Result> {
     this.op = 'upsert'; this.payload = row; this.upsertOpts = opts; return this;
   }
   eq(col: string, v: unknown) { this.filters.push((r) => r[col] === v); return this; }
+  in(col: string, vs: unknown[]) { this.filters.push((r) => vs.includes(r[col])); return this; }
   gte(col: string, v: string) { this.filters.push((r) => String(r[col]) >= v); return this; }
   lt(col: string, v: string) { this.filters.push((r) => String(r[col]) < v); return this; }
   order(col: string, opts?: { ascending?: boolean }) { this.sort = { col, asc: opts?.ascending ?? true }; return this; }
@@ -191,6 +239,9 @@ class Query implements PromiseLike<Result> {
           if (this.table === 'slots' && t.slots.some((s) => s.day === row.day)) {
             return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint "slots_pkey"' } };
           }
+          if (this.table === 'custom_emojis' && t.custom_emojis.some((e) => e.name === row.name)) {
+            return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint "custom_emojis_name_key"' } };
+          }
           t[this.table].push(row);
           rows.push(row);
         }
@@ -225,6 +276,11 @@ class Query implements PromiseLike<Result> {
           t.comments = t.comments.filter((c) => !days.has(c.day));
           t.reactions = t.reactions.filter((r) => !days.has(r.day));
         }
+        if (this.table === 'custom_emojis') {
+          // ON DELETE CASCADE（その絵文字のリアクションも消える）
+          const ids = new Set(rows.map((r) => r.id));
+          t.reactions = t.reactions.filter((r) => !ids.has(r.custom_emoji_id));
+        }
         break;
       }
     }
@@ -245,6 +301,33 @@ class Query implements PromiseLike<Result> {
   }
 }
 
+/** supabase.storage.from(bucket) の真似（upload / remove / getPublicUrl だけ） */
+function mockBucket(bucket: string) {
+  const key = (path: string) => `${bucket}/${path}`;
+  return {
+    async upload(path: string, body: Buffer | Uint8Array, opts?: { contentType?: string; upsert?: boolean }) {
+      if (!opts?.upsert && storage().has(key(path))) {
+        return { data: null, error: { statusCode: '409', message: 'The resource already exists' } };
+      }
+      storage().set(key(path), { body: Buffer.from(body), contentType: opts?.contentType ?? 'application/octet-stream' });
+      return { data: { path }, error: null };
+    },
+    async remove(paths: string[]) {
+      for (const p of paths) storage().delete(key(p));
+      return { data: paths.map((name) => ({ name })), error: null };
+    },
+    getPublicUrl(path: string) {
+      tables(); // シードの画像を用意させる
+      const obj = storage().get(key(path));
+      const publicUrl = obj ? `data:${obj.contentType};base64,${obj.body.toString('base64')}` : '';
+      return { data: { publicUrl } };
+    },
+  };
+}
+
 export function createMockClient(): SupabaseClient {
-  return { from: (table: string) => new Query(table) } as unknown as SupabaseClient;
+  return {
+    from: (table: string) => new Query(table),
+    storage: { from: mockBucket },
+  } as unknown as SupabaseClient;
 }

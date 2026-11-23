@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-mock/
 out/
 .env
 .env.local
