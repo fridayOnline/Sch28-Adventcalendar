@@ -31,7 +31,7 @@ export const sessionCookieOptions = {
 };
 
 export async function isAdmin(): Promise<boolean> {
-  const token = cookies().get(ADMIN_COOKIE)?.value;
+  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
   if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, secret());

@@ -5,11 +5,11 @@ import { parseBody, parseDay, withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 import { passwordOnlySchema } from '@/lib/validation';
 
-type Ctx = { params: { day: string } };
+type Ctx = { params: Promise<{ day: string }> };
 
 /** 編集画面のロック解除。本人なので公開前でも title/url を返す */
 export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   const { editPassword } = await parseBody(req, passwordOnlySchema);
 
   const { data, error } = await db()

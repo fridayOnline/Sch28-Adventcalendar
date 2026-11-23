@@ -2,7 +2,7 @@
 
 import data from '@emoji-mart/data';
 import ja from '@emoji-mart/data/i18n/ja.json';
-import Picker from '@emoji-mart/react';
+import { Picker } from 'emoji-mart';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { EMOJI_NAME_RE, EMOJI_UPLOAD_MAX_BYTES, EMOJI_UPLOAD_TYPES } from '@/lib/emoji';
 import type { CustomEmoji } from '@/types';
@@ -44,23 +44,7 @@ export default function EmojiPicker({
       </div>
 
       {tab === 'emoji' ? (
-        <Picker
-          data={data}
-          i18n={ja}
-          locale="ja"
-          theme="light"
-          set="native"
-          previewPosition="none"
-          skinTonePosition="search"
-          navPosition="top"
-          maxFrequentRows={2}
-          perLine={8}
-          emojiSize={22}
-          emojiButtonSize={34}
-          dynamicWidth
-          autoFocus
-          onEmojiSelect={(e: { native?: string }) => e.native && onSelect({ emoji: e.native })}
-        />
+        <MartPicker onEmojiSelect={(e) => e.native && onSelect({ emoji: e.native })} />
       ) : (
         <CustomGrid customEmojis={customEmojis} onPick={(c) => onSelect({ custom: c })} />
       )}
@@ -75,6 +59,45 @@ export default function EmojiPicker({
       </button>
     </div>
   );
+}
+
+/**
+ * emoji-mart のピッカー（Web Component）を div の中に置く。
+ * @emoji-mart/react は React 19 に対応していないので、同じことを自前でしている。
+ */
+function MartPicker({ onEmojiSelect }: { onEmojiSelect: (e: { native?: string }) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onSelectRef = useRef(onEmojiSelect);
+  onSelectRef.current = onEmojiSelect;
+
+  useEffect(() => {
+    const parent = ref.current;
+    if (!parent) return;
+    const picker = new Picker({
+      data,
+      i18n: ja,
+      locale: 'ja',
+      theme: 'light',
+      set: 'native',
+      previewPosition: 'none',
+      skinTonePosition: 'search',
+      navPosition: 'top',
+      maxFrequentRows: 2,
+      perLine: 8,
+      emojiSize: 22,
+      emojiButtonSize: 34,
+      dynamicWidth: true,
+      autoFocus: true,
+      onEmojiSelect: (e: { native?: string }) => onSelectRef.current(e),
+      parent,
+    } as ConstructorParameters<typeof Picker>[0]);
+    // 開発時の React は effect を2回動かすので、外すときは必ず消す
+    return () => {
+      (picker as unknown as HTMLElement).remove();
+    };
+  }, []);
+
+  return <div ref={ref} className="mart-picker" />;
 }
 
 /** カスタム絵文字の一覧（名前で絞り込み） */

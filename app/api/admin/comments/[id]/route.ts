@@ -6,7 +6,7 @@ import { parseBody, withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 import { adminCommentPatchSchema } from '@/lib/validation';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
   await requireAdmin();
@@ -15,7 +15,7 @@ export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx)
   const { data, error } = await db()
     .from('comments')
     .update({ hidden })
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .select('id, day')
     .maybeSingle();
   if (error) throw error;
@@ -32,7 +32,7 @@ export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: Ct
   const { data, error } = await db()
     .from('comments')
     .delete()
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .select('day')
     .maybeSingle();
   if (error) throw error;

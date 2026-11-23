@@ -9,14 +9,14 @@ import { getIpHash, parseBody, parseDay, withErrorHandling } from '@/lib/request
 import { db } from '@/lib/supabase';
 import { reactionSchema } from '@/lib/validation';
 
-type Ctx = { params: { day: string } };
+type Ctx = { params: Promise<{ day: string }> };
 
 /**
  * リアクションのトグル。body は { clientId, emoji } か { clientId, customEmojiId }。
  * 返り値はトグル後のその日のリアクション一覧（{ reactions: ReactionItem[] }）。
  */
 export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
-  const day = parseDay(params.day);
+  const day = parseDay((await params).day);
   if (!isPublished(day)) throw apiError('NOT_PUBLISHED');
 
   const supabase = db();

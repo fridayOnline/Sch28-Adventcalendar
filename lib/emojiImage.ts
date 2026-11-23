@@ -1,5 +1,5 @@
 import 'server-only';
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { apiError } from '@/lib/errors';
 
 const ALLOWED_FORMATS = new Set(['png', 'jpeg', 'gif', 'webp']);
@@ -12,7 +12,7 @@ export const EMOJI_SIZE = 128;
  * - アニメーション GIF / WebP は動きを残す
  */
 export async function toEmojiWebp(input: Buffer): Promise<Buffer> {
-  let meta: sharp.Metadata;
+  let meta: Metadata;
   try {
     meta = await sharp(input, { limitInputPixels: 4096 * 4096 }).metadata();
   } catch {
@@ -25,7 +25,7 @@ export async function toEmojiWebp(input: Buffer): Promise<Buffer> {
   const animated = (meta.pages ?? 1) > 1;
   try {
     return await sharp(input, { animated, limitInputPixels: 4096 * 4096 })
-      .rotate() // EXIF の向きを反映
+      .autoOrient() // EXIF の向きを反映
       .resize(EMOJI_SIZE, EMOJI_SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .webp({ quality: 82, effort: 4 })
       .toBuffer();

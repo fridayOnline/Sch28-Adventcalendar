@@ -7,9 +7,9 @@ import { getCalendar } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditPage({ searchParams }: { searchParams: { day?: string } }) {
+export default async function EditPage({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
   const cells = await getCalendar();
-  const raw = Number(searchParams.day);
+  const raw = Number((await searchParams).day);
   const day = Number.isInteger(raw) && raw >= 1 && raw <= 25 ? raw : null;
   const cell = day ? cells.find((c) => c.day === day) : null;
 
