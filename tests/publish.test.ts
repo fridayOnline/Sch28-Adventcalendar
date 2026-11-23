@@ -2,14 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { isPublished, leadingPadCount, todayDay, weekdayJa } from '@/lib/publish';
 
 describe('isPublished', () => {
-  it('JST 12/1 0:00 の直前は false、ちょうどで true', () => {
-    expect(isPublished(1, new Date('2026-11-30T14:59:59Z'))).toBe(false);
-    expect(isPublished(1, new Date('2026-11-30T15:00:00Z'))).toBe(true);
+  it('JST 12/1 6:00 の直前は false、ちょうどで true', () => {
+    expect(isPublished(1, new Date('2026-11-30T20:59:59Z'))).toBe(false);
+    expect(isPublished(1, new Date('2026-11-30T21:00:00Z'))).toBe(true);
+  });
+
+  it('当日の0時〜6時はまだ開かない', () => {
+    expect(isPublished(1, new Date('2026-11-30T15:00:00Z'))).toBe(false); // JST 12/1 0:00
+    expect(isPublished(1, new Date('2026-11-30T20:00:00Z'))).toBe(false); // JST 12/1 5:00
   });
 
   it('25日も同じように切り替わる', () => {
-    expect(isPublished(25, new Date('2026-12-24T14:59:59Z'))).toBe(false);
-    expect(isPublished(25, new Date('2026-12-24T15:00:00Z'))).toBe(true);
+    expect(isPublished(25, new Date('2026-12-24T20:59:59Z'))).toBe(false);
+    expect(isPublished(25, new Date('2026-12-24T21:00:00Z'))).toBe(true);
   });
 });
 

@@ -3,13 +3,13 @@ import { MainHeader, SiteFooter } from '@/components/SiteHeader';
 import { eventYear } from '@/lib/publish';
 import { getCalendar } from '@/lib/queries';
 
-// 0:00 を過ぎてから最大1分で切り替わる
+// 6:00 を過ぎてから最大1分で切り替わる
 export const revalidate = 60;
 
 const STEPS = [
   ['01', '空いている箱を予約', '「募集中」の日を選んで、名前と編集用パスワードを入れるだけ。先着順で、1人で何日でも担当できます。'],
   ['02', '記事を書いてURLを登録', 'ブログ・note・Qiita・Zenn など好きな場所で書いて、自分の箱の「編集」からタイトルとURLを登録します。'],
-  ['03', '当日0時に箱が開く', '担当日のJST 0:00になるとリンクが公開され、コメントやリアクションが届くようになります。'],
+  ['03', '当日6時に箱が開く', '担当日のJST 6:00になるとリンクが公開され、コメントやリアクションが届くようになります。'],
 ] as const;
 
 export default async function HomePage() {
@@ -23,9 +23,6 @@ export default async function HomePage() {
 
       <section className="hero wrap">
         <div className="hero-text">
-          <p className="label hero-label">
-            DEC 01 — DEC 25<span className="pc-only"> · 毎日 0:00 (JST) にひとつ開く</span>
-          </p>
           <h1 className="hero-title">
             Advent
             <br />
@@ -33,9 +30,9 @@ export default async function HomePage() {
           </h1>
           <p className="hero-lead">
             <span className="pc-only">
-              好きなことを、1日1本。メンバーが12月1日から25日まで、趣味の記事を毎日ひとつずつ公開します。箱は担当日の0時に開きます。
+              好きなことを、1日1本。メンバーが12月1日から25日まで、趣味の記事を毎日ひとつずつ公開します。箱は担当日の朝6時に開きます。
             </span>
-            <span className="sp-only">好きなことを、1日1本。担当日の0時に箱が開きます。</span>
+            <span className="sp-only">好きなことを、1日1本。担当日の朝6時に箱が開きます。</span>
           </p>
         </div>
         <dl className="stats">
@@ -66,7 +63,7 @@ export default async function HomePage() {
           </li>
           <li>
             <i className="lg-res" />
-            予約済み — 当日0時まで中身は秘密
+            予約済み — 当日6時まで中身は秘密
           </li>
           <li>
             <i className="lg-pub" />

@@ -150,7 +150,7 @@ export default function EditForm({ day }: { day: number }) {
             placeholder="https://"
             required
           />
-          <p className="hint">http:// か https:// で始まるURLのみ。公開日の0時まではカレンダーに出ません</p>
+          <p className="hint">http:// か https:// で始まるURLのみ。公開日の朝6時まではカレンダーに出ません</p>
         </div>
         {error && (
           <p role="alert" className="err">

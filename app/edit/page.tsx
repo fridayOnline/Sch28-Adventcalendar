@@ -2,7 +2,7 @@ import Link from 'next/link';
 import BoxArt from '@/components/BoxArt';
 import EditForm from '@/components/EditForm';
 import { SiteFooter, SubHeader } from '@/components/SiteHeader';
-import { weekdayJa } from '@/lib/publish';
+import { PUBLISH_TIME_LABEL, weekdayJa } from '@/lib/publish';
 import { getCalendar } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +36,7 @@ export default async function EditPage({ searchParams }: { searchParams: { day?:
                 <p className="page-kicker">EDIT · DAY {String(day).padStart(2, '0')}</p>
                 <h1 className="page-title">12月{day}日（{weekdayJa(day)}）の記事を登録</h1>
                 <p className="page-sub">
-                  担当：{cell.authorName} ／ 公開 12/{day} 0:00
+                  担当：{cell.authorName} ／ 公開 12/{day} {PUBLISH_TIME_LABEL}
                 </p>
               </div>
             </div>
