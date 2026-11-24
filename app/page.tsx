@@ -7,9 +7,9 @@ import { getCalendar } from '@/lib/queries';
 export const revalidate = 60;
 
 const STEPS = [
-  ['01', '空いている箱を予約', '「募集中」の日を選んで、名前と編集用パスワードを入れるだけ。先着順で、1人で何日でも担当できます。'],
-  ['02', '記事を書いてURLを登録', 'ブログ・note・Qiita・Zenn など好きな場所で書いて、自分の箱の「編集」からタイトルとURLを登録します。'],
-  ['03', '当日6時に箱が開く', '担当日のJST 6:00になるとリンクが公開され、コメントやリアクションが届くようになります。'],
+  ['01', '空いている箱を予約', '「募集中」の日を選んで、名前と編集用パスワードを入れよう！先着順で、1人で何日でも担当できるよ！'],
+  ['02', '記事を書いてURLを登録', 'ブログ・note・Qiita・Zenn など好きなプラットフォームで書いて、当日までに自分の箱の「編集」からタイトルとURLを登録してね。'],
+  ['03', '当日6時に箱が開くよ！', '担当日の朝6時になるとリンクが公開されて、コメントやリアクションが届くようになるよ！'],
 ] as const;
 
 export default async function HomePage() {
@@ -24,15 +24,12 @@ export default async function HomePage() {
       <section className="hero wrap">
         <div className="hero-text">
           <h1 className="hero-title">
-            Advent
+            FriOn Advent
             <br />
             Calendar {eventYear()}
           </h1>
           <p className="hero-lead">
-            <span className="pc-only">
-              好きなことを、1日1本。メンバーが12月1日から25日まで、趣味の記事を毎日ひとつずつ公開します。箱は担当日の朝6時に開きます。
-            </span>
-            <span className="sp-only">好きなことを、1日1本。担当日の朝6時に箱が開きます。</span>
+            金オンのみんなで、クリスマスをお祝いしよう！12月1日から25日まで、趣味の記事が毎日ひとつずつ公開されます。毎朝6時、小箱の中から誰かの「好き」が届きます。
           </p>
         </div>
         <dl className="stats">

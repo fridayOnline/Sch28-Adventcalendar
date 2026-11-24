@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ArticleForm from '@/components/ArticleForm';
+import PasswordChange from '@/components/PasswordChange';
 
 type Unlocked = { authorName: string; title: string | null; url: string | null };
 
@@ -10,11 +12,8 @@ export default function EditForm({ day }: { day: number }) {
   // パスワードはメモリにだけ持ち、保存しない
   const [pw, setPw] = useState('');
   const [slot, setSlot] = useState<Unlocked | null>(null);
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
 
   async function unlock(e: React.FormEvent) {
     e.preventDefault();
@@ -30,31 +29,6 @@ export default function EditForm({ day }: { day: number }) {
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error?.message ?? 'エラーが起きました');
       setSlot(data);
-      setTitle(data.title ?? '');
-      setUrl(data.url ?? '');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが起きました');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError('');
-    setSaved(false);
-    try {
-      const res = await fetch(`/api/slots/${day}`, {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ editPassword: pw, title: title.trim(), url: url.trim() }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error?.message ?? 'エラーが起きました');
-      setSaved(true);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが起きました');
     } finally {
@@ -114,63 +88,29 @@ export default function EditForm({ day }: { day: number }) {
         <button className="btn" type="submit" disabled={!pw || busy}>
           {busy ? '確認しています…' : 'ロックを解除'}
         </button>
+        <p className="hint" style={{ margin: 0, textAlign: 'center', fontSize: 13 }}>
+          パスワードを忘れた場合は、メンターに言ってね！
+        </p>
       </form>
     );
   }
 
   return (
     <>
-      <form onSubmit={save} className="form-card">
-        <div className="form-row">
-          <label htmlFor="ttl">記事タイトル</label>
-          <input
-            id="ttl"
-            className="field"
-            type="text"
-            maxLength={100}
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              setSaved(false);
-            }}
-            required
-          />
-        </div>
-        <div className="form-row">
-          <label htmlFor="url">記事URL</label>
-          <input
-            id="url"
-            className="field"
-            type="url"
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setSaved(false);
-            }}
-            placeholder="https://"
-            required
-          />
-          <p className="hint">http:// か https:// で始まるURLのみ。公開日の朝6時まではカレンダーに出ません</p>
-        </div>
-        {error && (
-          <p role="alert" className="err">
-            {error}
-          </p>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <button className="btn" type="submit" disabled={busy}>
-            保存する
-          </button>
-          {saved && (
-            <span role="status" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, color: '#2F6B3A' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12l5 5 9-10" />
-              </svg>
-              保存しました
-            </span>
-          )}
-        </div>
-      </form>
+      <ArticleForm
+        day={day}
+        editPassword={pw}
+        initialTitle={slot.title ?? ''}
+        initialUrl={slot.url ?? ''}
+        onSaved={() => router.refresh()}
+      />
+
+      <PasswordChange day={day} currentPassword={pw} onChanged={setPw} />
+      {error && (
+        <p role="alert" className="err" style={{ marginTop: 16 }}>
+          {error}
+        </p>
+      )}
 
       <section
         style={{

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import TempPasswordDialog, { type IssuedPassword } from '@/components/TempPasswordDialog';
 import type { AdminOverview, AdminSlot, SlotState } from '@/types';
 
 const STATE_LABEL: Record<SlotState, string> = {
@@ -41,6 +42,7 @@ export default function AdminPanel() {
   const [data, setData] = useState<AdminOverview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [issued, setIssued] = useState<IssuedPassword | null>(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -148,12 +150,29 @@ export default function AdminPanel() {
       });
     });
 
+  const resetPassword = (slot: AdminSlot) => {
+    if (
+      !confirm(
+        `12月${slot.day}日（${slot.authorName}）の編集用パスワードを再発行します。\n今のパスワードは使えなくなります。よろしいですか？`,
+      )
+    )
+      return;
+    run(async () => {
+      const res = (await call(`/api/admin/slots/${slot.day}/password`, { method: 'POST' })) as {
+        day: number;
+        tempPassword: string;
+      };
+      setIssued({ day: res.day, authorName: slot.authorName, tempPassword: res.tempPassword });
+    });
+  };
+
   return (
     <>
+      <TempPasswordDialog issued={issued} onClose={() => setIssued(null)} />
       <header className="admin-header">
         <div className="wrap" style={{ padding: '16px 32px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <p style={{ margin: 0, font: '800 15px/1 var(--font-en)', letterSpacing: '.06em' }}>
-            ADVENT CALENDAR <span style={{ color: '#F09A8F' }}>ADMIN</span>
+            FriOn ADVENT CALENDAR <span style={{ color: '#F09A8F' }}>ADMIN</span>
           </p>
           <button
             type="button"
@@ -267,6 +286,15 @@ export default function AdminPanel() {
                           <span style={{ display: 'inline-flex', gap: 6 }}>
                             <button type="button" className="act" disabled={busy} onClick={() => editSlot(s)}>
                               編集
+                            </button>
+                            <button
+                              type="button"
+                              className="act"
+                              disabled={busy}
+                              onClick={() => resetPassword(s)}
+                              title="本人がパスワードを忘れたときに、仮パスワードを発行します"
+                            >
+                              PW再発行
                             </button>
                             <button
                               type="button"
