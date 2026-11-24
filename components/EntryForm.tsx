@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ArticleForm from '@/components/ArticleForm';
 import BoxArt from '@/components/BoxArt';
 
 export default function EntryForm({
@@ -40,8 +41,8 @@ export default function EntryForm({
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? 'エラーが起きました');
       }
+      // ここで router.refresh() すると、埋まった日の /entry はカレンダーへ飛ばされるので呼ばない
       setDone(true);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが起きました');
     } finally {
@@ -49,34 +50,45 @@ export default function EntryForm({
     }
   }
 
+  // 予約できたら、同じパスワードのまま記事タイトルとURLを登録してもらい、保存できたらカレンダーへ戻る
   if (done) {
     return (
-      <div className="form-card" style={{ padding: '40px 32px', alignItems: 'center', textAlign: 'center', gap: 16 }}>
-        <BoxArt day={day} state="reserved" size="mini" />
-        <h1 style={{ margin: '10px 0 0', fontSize: 26 }}>予約できました</h1>
-        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.8, color: 'var(--ink-sub)' }}>
-          {dateLabel}はあなたの箱です。
-        </p>
-        <p
-          style={{
-            margin: 0,
-            padding: '14px 18px',
-            borderRadius: 10,
-            background: '#F7EBC4',
-            fontSize: 14,
-            lineHeight: 1.7,
-            fontWeight: 700,
-            color: 'var(--ink-sub)',
+      <>
+        <ol className="form-steps" aria-label="予約の手順">
+          <li className="step-done">
+            <span className="step-no" aria-hidden="true">✓</span>名前とパスワード
+          </li>
+          <li className="step-now" aria-current="step">
+            <span className="step-no" aria-hidden="true">2</span>記事タイトルとURL
+          </li>
+        </ol>
+
+        <div role="status" className="reserved-note">
+          <BoxArt day={day} state="reserved" size="thumb" />
+          <div>
+            <p className="reserved-note-title">{dateLabel}を予約しました</p>
+            <p className="reserved-note-text">
+              パスワードはあとから記事を直すときに使います。控えておいてください（あとから確認できません）。
+            </p>
+          </div>
+        </div>
+
+        <ArticleForm
+          day={day}
+          editPassword={pw}
+          submitLabel="保存してカレンダーへ戻る"
+          leaveAfterSave
+          onSaved={() => {
+            router.push('/');
+            router.refresh();
           }}
-        >
-          パスワードは記事URLの登録に使うので控えておいてください。
-          <br />
-          あとから確認することはできません。
-        </p>
-        <Link className="btn" href="/" style={{ marginTop: 8 }}>
-          カレンダーへ戻る
-        </Link>
-      </div>
+          secondary={
+            <Link className="text-link" href="/">
+              記事がまだなら、あとで登録する
+            </Link>
+          }
+        />
+      </>
     );
   }
 

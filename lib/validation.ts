@@ -26,6 +26,14 @@ export const reserveSchema = z.object({
 
 export const passwordOnlySchema = z.object({ editPassword: password });
 
+/** 本人によるパスワード変更（/edit） */
+export const changePasswordSchema = z
+  .object({ editPassword: password, newPassword: password })
+  .refine((v) => v.editPassword !== v.newPassword, {
+    message: '今と違うパスワードにしてください',
+    path: ['newPassword'],
+  });
+
 export const updateSlotSchema = z.object({
   editPassword: password,
   title: trimmed(100).min(1),

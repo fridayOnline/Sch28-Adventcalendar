@@ -2,7 +2,7 @@ import Link from 'next/link';
 import MobileMenu from '@/components/MobileMenu';
 import { eventYear } from '@/lib/publish';
 
-/** ロゴ（箱のアイコン＋ADVENT CALENDAR 2026）。全ページ共通 */
+/** ロゴ（箱のアイコン＋FriOn ADVENT CALENDAR 2026）。全ページ共通 */
 export function Brand() {
   return (
     <Link className="brand" href="/">
@@ -12,7 +12,7 @@ export function Brand() {
         <path d="M17 17c-5-6-10-5-9-1s6 3 9 1zm0 0c5-6 10-5 9-1s-6 3-9 1z" fill="none" stroke="#96701A" strokeWidth="2" />
       </svg>
       <span>
-        ADVENT CALENDAR <em>{eventYear()}</em>
+        FriOn ADVENT CALENDAR <em>{eventYear()}</em>
       </span>
     </Link>
   );
@@ -53,7 +53,7 @@ export function SubHeader() {
 export function SiteFooter() {
   return (
     <footer className="site-footer wrap">
-      <p>Advent Calendar {eventYear()}</p>
+      <p>FriOn Advent Calendar {eventYear()}</p>
       <p>記事はそれぞれの執筆者のサイトで公開されています</p>
     </footer>
   );

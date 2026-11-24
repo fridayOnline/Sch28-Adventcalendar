@@ -4,8 +4,8 @@ import { eventYear } from '@/lib/publish';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: `アドベントカレンダー ${eventYear()}`,
-  description: `好きなことを、1日1本。12月1日から25日まで、メンバーが趣味の記事を毎日ひとつずつ公開します。`,
+  title: `FriOn Advent Calendar ${eventYear()}`,
+  description: `金オンのみんなで、クリスマスをお祝いしよう！12月1日から25日まで、趣味の記事が毎日ひとつずつ公開されます。毎朝6時、小箱の中から誰かの「好き」が届きます。`,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
