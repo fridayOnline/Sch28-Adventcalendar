@@ -34,7 +34,6 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
       <div className="cell-pc">
         {state === 'open' && (
           <Link className="bx bx-open" href={`/entry?day=${day}`} aria-label={`12月${day}日 募集中。予約する`}>
-            <span className="open-lbl">募集中</span>
             <span className="open-cta">＋ 予約する</span>
             <span className="num num-soft">{day}</span>
             {isToday && <SantaHat />}
@@ -48,10 +47,9 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
             <Link className="edit" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
               編集
             </Link>
-            <span className="soon">Coming soon</span>
             <span className="num">{day}</span>
             <span className="sr-only">
-              12月{day}日 {authorName} Coming soon
+              12月{day}日 {authorName} 公開前
             </span>
             {isToday && <SantaHat />}
           </div>
@@ -85,7 +83,6 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
           <BoxArt day={day} state="open" size="thumb" />
           <span className="row-body">
             <span className="row-date">{dateEn}</span>
-            <span className="row-main">募集中</span>
           </span>
           <span className="row-cta" aria-hidden="true">
             ＋ 予約する
@@ -99,7 +96,6 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
           <span className="row-body">
             <span className="row-date">{dateEn}</span>
             <span className="row-main">{authorName}</span>
-            <span className="row-soon">Coming soon</span>
           </span>
           <Link className="row-edit" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
             編集
