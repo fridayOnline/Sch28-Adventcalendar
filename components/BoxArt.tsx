@@ -43,7 +43,7 @@ export function Flap({ day }: { day: number }) {
         <span className="flap-bow">
           <Bow className="flap-bow-svg" />
         </span>
-        <span className="flap-num">{day}</span>
+        <span className="flap-num">{pad2(day)}</span>
       </span>
       <span className="flap-face flap-back">
         <span className="flap-back-num">{pad2(day)}</span>
@@ -96,7 +96,7 @@ export default function BoxArt({
     <span className={cls} aria-hidden="true">
       {state === 'reserved' && size === 'big' && <Bow className="sbox-bow" />}
       {state === 'reserved' && size === 'mini' && authorName && <span className="sbox-tag">{authorName}</span>}
-      <span className="sbox-num">{day}</span>
+      <span className="sbox-num">{pad2(day)}</span>
     </span>
   );
 }

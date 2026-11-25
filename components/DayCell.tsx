@@ -35,7 +35,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
         {state === 'open' && (
           <Link className="bx bx-open" href={`/entry?day=${day}`} aria-label={`12月${day}日 募集中。予約する`}>
             <span className="open-cta">＋ 予約する</span>
-            <span className="num num-soft">{day}</span>
+            <span className="num num-soft">{pad2(day)}</span>
             {isToday && <SantaHat />}
           </Link>
         )}
@@ -47,7 +47,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
             <Link className="edit" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
               編集
             </Link>
-            <span className="num">{day}</span>
+            <span className="num">{pad2(day)}</span>
             <span className="sr-only">
               12月{day}日 {authorName} 公開前
             </span>

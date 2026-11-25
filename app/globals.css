@@ -36,6 +36,7 @@ body {
   background-size: 100% 1100px;
   background-repeat: no-repeat;
   font-family: var(--font-ja);
+  font-weight: 700;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -141,7 +142,7 @@ a:hover { color: #5E1013; }
 .field {
   width: 100%; min-height: 48px;
   border: 2px solid var(--line); border-radius: 10px; background: #fff;
-  padding: 10px 14px; font: 500 16px/1.5 var(--font-ja); color: var(--ink);
+  padding: 10px 14px; font: 700 16px/1.5 var(--font-ja); color: var(--ink);
 }
 .field:focus { outline: 3px solid rgba(168, 25, 31, .25); border-color: var(--red-ink); }
 .field:disabled { background: #F4EEE6; color: var(--ink-muted); }
@@ -270,7 +271,7 @@ a.bx:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px rgba(255, 
 a.bx:focus-visible { outline: 3px solid var(--red-ink); outline-offset: 4px; }
 
 .num {
-  position: absolute; right: 7%; bottom: 5%;
+  position: absolute; right: 10%; bottom: 8%;
   font: 800 clamp(18px, 19.5cqi, 30px)/1 var(--font-en);
   color: var(--red-ink); letter-spacing: -.5px;
 }
@@ -296,8 +297,9 @@ a.bx:focus-visible { outline: 3px solid var(--red-ink); outline-offset: 4px; }
   color: #4A2E17;
 }
 .edit {
-  position: absolute; right: 6px; top: 6px; z-index: 1;
-  min-height: 26px; padding: 0 10px; border-radius: 999px;
+  /* 名前タグ（.tag）と同じ位置に置いて、破線の見え方をそろえる */
+  position: absolute; right: 7%; top: 7%; z-index: 1;
+  min-height: 26px; padding: 0 10px; border-radius: 3px;
   display: inline-flex; align-items: center;
   background: var(--forest); color: var(--paper);
   font: 700 clamp(10px, 7.6cqi, 11px)/1 var(--font-ja); text-decoration: none;
@@ -367,7 +369,7 @@ a.bx-pub:hover {
   .ptitle { -webkit-line-clamp: 3; margin-top: 2px; }
   .soon { display: none; }
   .tag { left: 5px; top: 5px; max-width: calc(100% - 44px); padding: 2px 5px; }
-  .edit { right: 4px; top: 4px; min-height: 22px; padding: 0 7px; }
+  .edit { min-height: 22px; padding: 0 7px; }
 }
 
 /* 凡例 */
@@ -407,7 +409,9 @@ a.bx-pub:hover {
   content: ""; position: absolute; inset: 8px;
   border: 2px dashed var(--forest); border-radius: 3px;
 }
-.sbox-thumb.sbox-open::before { inset: 5px; border-width: 1.5px; }
+/* 行内サムネイルと、予約・編集ページの見出し横の箱は点線なし */
+.sbox-thumb.sbox-open::before,
+.sbox-mini.sbox-open::before { content: none; }
 .sbox-thumb.sbox-open { box-shadow: 0 2px 0 #C3A67F; }
 
 .sbox-num {
@@ -416,7 +420,7 @@ a.bx-pub:hover {
 }
 .sbox-open .sbox-num { color: #6E4A2A; }
 .sbox-big .sbox-num { right: 16px; bottom: 10px; font-size: 52px; }
-.sbox-thumb .sbox-num { right: 4px; bottom: 2px; font-size: 15px; }
+.sbox-thumb .sbox-num { right: 9px; bottom: 7px; font-size: 12px; }
 .sbox-tag {
   position: absolute; left: 6px; top: 6px; max-width: calc(100% - 12px);
   padding: 2px 6px; border-radius: 3px; background: var(--paper);
@@ -479,7 +483,7 @@ a.bx-pub:hover {
   border: 1.5px dashed rgba(110, 72, 38, .35); border-radius: 3px;
 }
 .flap-num {
-  position: absolute; right: 7%; bottom: 5%;
+  position: absolute; right: 10%; bottom: 8%;
   font: 800 19.5cqi/1 var(--font-en); color: var(--red-ink); letter-spacing: -.5px;
 }
 /* 裏面：開いたあとに箱の上に見える内側。遠近で縦に潰れるので、数字は縦に伸ばしておく */
@@ -549,7 +553,7 @@ a.bx-pub:hover {
 .detail-kicker .label { margin: 0; letter-spacing: .16em; }
 .edit-pill {
   position: relative; flex: none;
-  min-height: 30px; padding: 0 12px; border-radius: 999px;
+  min-height: 30px; padding: 0 12px; border-radius: 3px;
   display: inline-flex; align-items: center; gap: 5px;
   background: var(--forest); color: var(--paper);
   font: 700 12px/1 var(--font-ja); text-decoration: none;
@@ -677,7 +681,7 @@ em-emoji-picker {
 .comment-empty { margin: 0; padding: 20px 10px; text-align: center; font-size: 14px; color: var(--ink-muted); }
 .comment-form { margin-top: 16px; padding: 24px; border-radius: 16px; gap: 14px; }
 .comment-name { max-width: 280px; }
-.label-note { font-weight: 500; color: var(--ink-muted); }
+.label-note { font-weight: 700; color: var(--ink-muted); }
 .comment-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .comment-remain { font: 700 13px/1 var(--font-en); color: var(--ink-muted); }
 .comment-remain.is-low { color: var(--red-ink); }
@@ -784,7 +788,7 @@ em-emoji-picker {
   .row-edit {
     flex: none; min-height: 44px; min-width: 52px; padding: 0 14px;
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 999px; background: var(--forest); color: var(--paper);
+    border-radius: 3px; background: var(--forest); color: var(--paper);
     font-size: 12px; font-weight: 700; text-decoration: none;
   }
   .row-edit:hover { background: var(--forest-dark); color: #fff; }
