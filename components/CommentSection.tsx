@@ -99,7 +99,7 @@ export default function CommentSection({
       <form onSubmit={submit} className="form-card comment-form">
         <div className="form-row comment-name">
           <label htmlFor="cname">
-            名前<span className="label-note">（任意・空なら「名無し」）</span>
+            名前<span className="label-note">（任意）</span>
           </label>
           <input
             id="cname"

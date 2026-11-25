@@ -14,8 +14,6 @@ const STEPS = [
 
 export default async function HomePage() {
   const cells = await getCalendar();
-  const reservedCount = cells.filter((c) => c.state !== 'open').length;
-  const publishedCount = cells.filter((c) => c.state === 'published').length;
 
   return (
     <>
@@ -26,28 +24,12 @@ export default async function HomePage() {
           <h1 className="hero-title">
             FriOn Advent
             <br />
-            Calendar {eventYear()}
+            Calendar <span className="hero-year">{eventYear()}</span>
           </h1>
           <p className="hero-lead">
             金オンのみんなで、クリスマスをお祝いしよう！12月1日から25日まで、趣味の記事が毎日ひとつずつ公開されます。毎朝6時、小箱の中から誰かの「好き」が届きます。
           </p>
         </div>
-        <dl className="stats">
-          <div className="stat">
-            <dt>予約済み</dt>
-            <dd>
-              {reservedCount}
-              <small> / 25</small>
-            </dd>
-          </div>
-          <div className="stat">
-            <dt>公開済み</dt>
-            <dd className="stat-red">
-              {publishedCount}
-              <small> 本</small>
-            </dd>
-          </div>
-        </dl>
       </section>
 
       <section id="calendar" className="calendar wrap" aria-label="12月のカレンダー">

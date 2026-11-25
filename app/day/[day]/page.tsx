@@ -28,7 +28,6 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
   const prev = cells.find((c) => c.day === day - 1);
   const next = cells.find((c) => c.day === day + 1);
 
-  const linkHost = detail?.url ? safeHost(detail.url) : null;
 
   return (
     <>
@@ -74,11 +73,6 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
                     by <b>{detail.authorName}</b>
                   </p>
                 </div>
-                {detail.url && (
-                  <p className="hint" style={{ marginTop: 10 }}>
-                    外部サイト（{linkHost}）が新しいタブで開きます
-                  </p>
-                )}
               </>
             ) : (
               <>
@@ -121,12 +115,4 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
       <SiteFooter />
     </>
   );
-}
-
-function safeHost(url: string): string | null {
-  try {
-    return new URL(url).host;
-  } catch {
-    return null;
-  }
 }
