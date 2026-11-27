@@ -10,13 +10,19 @@ import { db } from '@/lib/supabase';
  * 編集用パスワードを確かめて枠を返す（/edit のロック解除・保存・取り消し・パスワード変更で共通）。
  * 間違えた回数だけを IP ごとに数え、10分に10回を超えたら 429 にする。
  */
-export async function loadSlotWithPassword(req: NextRequest, day: number, editPassword: string) {
+export async function loadSlotWithPassword(
+  req: NextRequest,
+  calendar: number,
+  day: number,
+  editPassword: string,
+) {
   const ipHash = getIpHash(req);
   if (await isRateLimited(ipHash, 'edit_password')) throw apiError('RATE_LIMITED');
 
   const { data, error } = await db()
     .from('slots')
-    .select('day, author_name, title, url, edit_key_hash')
+    .select('calendar, day, author_name, title, url, edit_key_hash')
+    .eq('calendar', calendar)
     .eq('day', day)
     .maybeSingle();
   if (error) throw error;

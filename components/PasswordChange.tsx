@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { withCal } from '@/lib/calendars';
 
 /**
  * /edit のロック解除後に出す「パスワードを変更する」。
@@ -8,10 +9,12 @@ import { useState } from 'react';
  * 変更できたら onChanged で新しいパスワードを親に返す（そのまま保存・取り消しを続けられるように）。
  */
 export default function PasswordChange({
+  cal,
   day,
   currentPassword,
   onChanged,
 }: {
+  cal: number;
   day: number;
   currentPassword: string;
   onChanged: (newPassword: string) => void;
@@ -32,7 +35,7 @@ export default function PasswordChange({
     setBusy(true);
     setError('');
     try {
-      const res = await fetch(`/api/slots/${day}/password`, {
+      const res = await fetch(withCal(`/api/slots/${day}/password`, cal), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ editPassword: currentPassword, newPassword: pw }),

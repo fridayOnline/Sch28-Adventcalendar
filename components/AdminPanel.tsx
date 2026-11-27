@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import TempPasswordDialog, { type IssuedPassword } from '@/components/TempPasswordDialog';
+import { calendarLabel, calendarPrefix, withCal } from '@/lib/calendars';
 import type { AdminOverview, AdminSlot, SlotState } from '@/types';
 
 const STATE_LABEL: Record<SlotState, string> = {
@@ -43,6 +44,8 @@ export default function AdminPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [issued, setIssued] = useState<IssuedPassword | null>(null);
+  /** 枠一覧で見ているカレンダー */
+  const [cal, setCal] = useState(1);
 
   const load = useCallback(async () => {
     setError('');
@@ -130,7 +133,11 @@ export default function AdminPanel() {
 
   if (!data) return <main className="wrap" style={{ padding: 80 }}>読み込み中…</main>;
 
-  const reserved = data.slots.filter((s) => s.state !== 'open' && s.authorName).length;
+  const calendars = Array.from({ length: data.calendarCount }, (_, i) => i + 1);
+  const isReserved = (s: AdminSlot) => s.state !== 'open' && !!s.authorName;
+  const reservedIn = (c: number) => data.slots.filter((s) => s.calendar === c && isReserved(s)).length;
+  const slots = data.slots.filter((s) => s.calendar === cal);
+  const slotApi = (s: AdminSlot, suffix = '') => withCal(`/api/admin/slots/${s.day}${suffix}`, s.calendar);
 
   const editSlot = (slot: AdminSlot) =>
     run(async () => {
@@ -140,7 +147,7 @@ export default function AdminPanel() {
       if (title === null) return;
       const url = prompt('URL（空で未設定）', slot.url ?? '');
       if (url === null) return;
-      await call(`/api/admin/slots/${slot.day}`, {
+      await call(slotApi(slot), {
         method: 'PATCH',
         body: JSON.stringify({
           authorName: authorName.trim(),
@@ -153,16 +160,16 @@ export default function AdminPanel() {
   const resetPassword = (slot: AdminSlot) => {
     if (
       !confirm(
-        `12月${slot.day}日（${slot.authorName}）の編集用パスワードを再発行します。\n今のパスワードは使えなくなります。よろしいですか？`,
+        `${calendarPrefix(slot.calendar)}12月${slot.day}日（${slot.authorName}）の編集用パスワードを再発行します。\n今のパスワードは使えなくなります。よろしいですか？`,
       )
     )
       return;
     run(async () => {
-      const res = (await call(`/api/admin/slots/${slot.day}/password`, { method: 'POST' })) as {
+      const res = (await call(slotApi(slot, '/password'), { method: 'POST' })) as {
         day: number;
         tempPassword: string;
       };
-      setIssued({ day: res.day, authorName: slot.authorName, tempPassword: res.tempPassword });
+      setIssued({ calendar: slot.calendar, day: res.day, authorName: slot.authorName, tempPassword: res.tempPassword });
     });
   };
 
@@ -230,10 +237,17 @@ export default function AdminPanel() {
           </div>
           <div className="card" style={{ flex: '1 1 160px', background: '#fff' }}>
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--ink-muted)' }}>予約済み</p>
-            <p style={{ margin: '6px 0 0', font: '800 28px/1 var(--font-en)' }}>
-              {reserved}
-              <span style={{ fontSize: 14, color: 'var(--ink-muted)' }}> / 25</span>
-            </p>
+            {calendars.map((c) => (
+              <p key={c} style={{ margin: '6px 0 0', font: '800 28px/1 var(--font-en)' }}>
+                {calendars.length > 1 && (
+                  <span style={{ font: '700 12px var(--font-ja)', color: 'var(--ink-muted)', marginRight: 8 }}>
+                    {calendarLabel(c)}
+                  </span>
+                )}
+                {reservedIn(c)}
+                <span style={{ fontSize: 14, color: 'var(--ink-muted)' }}> / 25</span>
+              </p>
+            ))}
           </div>
           <div className="card" style={{ flex: '1 1 160px', background: '#fff' }}>
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--ink-muted)' }}>コメント</p>
@@ -245,7 +259,27 @@ export default function AdminPanel() {
         </section>
 
         <section className="card" style={{ background: '#fff', padding: 24 }}>
-          <h2 style={{ margin: '0 0 14px', fontSize: 18 }}>枠一覧</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+            <h2 style={{ margin: 0, fontSize: 18 }}>枠一覧</h2>
+            {calendars.length > 1 && (
+              <div className="cal-tabs" role="tablist" aria-label="カレンダーを選ぶ" style={{ margin: 0 }}>
+                {calendars.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    role="tab"
+                    aria-selected={cal === c}
+                    className="cal-tab"
+                    style={{ minHeight: 40, padding: '0 16px', fontSize: 14 }}
+                    onClick={() => setCal(c)}
+                  >
+                    {calendarLabel(c)}
+                    <span className="cal-tab-count">{reservedIn(c)} / 25</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="admin-table">
               <thead>
@@ -259,10 +293,10 @@ export default function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                {data.slots.map((s) => {
+                {slots.map((s) => {
                   const empty = s.state === 'open' && !s.authorName;
                   return (
-                    <tr key={s.day} className={s.hidden ? 'muted' : ''}>
+                    <tr key={`${s.calendar}-${s.day}`} className={s.hidden ? 'muted' : ''}>
                       <td style={{ font: '800 16px var(--font-en)', color: 'var(--red-ink)' }}>{s.day}</td>
                       <td>
                         <span className={`pill ${s.hidden ? 'p-hid' : STATE_PILL[s.state]}`}>
@@ -302,7 +336,7 @@ export default function AdminPanel() {
                               disabled={busy}
                               onClick={() =>
                                 run(() =>
-                                  call(`/api/admin/slots/${s.day}`, {
+                                  call(slotApi(s), {
                                     method: 'PATCH',
                                     body: JSON.stringify({ hidden: !s.hidden }),
                                   }),
@@ -316,8 +350,8 @@ export default function AdminPanel() {
                               className="act act-danger"
                               disabled={busy}
                               onClick={() => {
-                                if (!confirm(`12月${s.day}日の枠を削除します。コメントとリアクションも消えます。よろしいですか？`)) return;
-                                run(() => call(`/api/admin/slots/${s.day}`, { method: 'DELETE' }));
+                                if (!confirm(`${calendarPrefix(s.calendar)}12月${s.day}日の枠を削除します。コメントとリアクションも消えます。よろしいですか？`)) return;
+                                run(() => call(slotApi(s), { method: 'DELETE' }));
                               }}
                             >
                               削除
@@ -357,7 +391,10 @@ export default function AdminPanel() {
                 )}
                 {data.comments.map((c) => (
                   <tr key={c.id} className={c.hidden ? 'muted' : ''}>
-                    <td style={{ font: '800 15px var(--font-en)', color: 'var(--red-ink)' }}>{c.day}</td>
+                    <td style={{ font: '800 15px var(--font-en)', color: 'var(--red-ink)', whiteSpace: 'nowrap' }}>
+                      {data.calendarCount > 1 && <span style={{ font: '700 11px var(--font-ja)', color: 'var(--ink-muted)', marginRight: 4 }}>C{c.calendar}</span>}
+                      {c.day}
+                    </td>
                     <td style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{c.name}</td>
                     <td style={{ minWidth: 320, lineHeight: 1.6 }}>{c.body}</td>
                     <td style={{ font: '600 12px var(--font-en)', color: 'var(--ink-muted)', whiteSpace: 'nowrap' }}>

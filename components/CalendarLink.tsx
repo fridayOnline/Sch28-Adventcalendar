@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ComponentProps } from 'react';
+import { homeHref } from '@/lib/calendars';
 
 /**
  * カレンダー（/）へ戻るリンク。
@@ -12,20 +13,22 @@ import type { ComponentProps } from 'react';
  */
 export default function CalendarLink({
   onClick,
+  cal = 1,
   ...props
-}: Omit<ComponentProps<typeof Link>, 'href'>) {
+}: Omit<ComponentProps<typeof Link>, 'href'> & { /** 戻り先のカレンダー（2枚目なら /?cal=2） */ cal?: number }) {
   const router = useRouter();
+  const href = homeHref(cal);
 
   return (
     <Link
       {...props}
-      href="/"
+      href={href}
       onClick={(e) => {
         onClick?.(e);
         // 新しいタブで開く（⌘/Ctrl/Shift/中クリック）ときはブラウザに任せる
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
-        router.push('/');
+        router.push(href);
         router.refresh();
       }}
     />

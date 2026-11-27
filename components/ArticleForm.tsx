@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { withCal } from '@/lib/calendars';
 
 /**
  * 記事タイトルと記事URLの入力・保存（PUT /api/slots/[day]）。
@@ -9,6 +10,7 @@ import { useState, type ReactNode } from 'react';
  * - それ以外：その場に「保存しました」を出してから onSaved を呼ぶ（編集画面）
  */
 export default function ArticleForm({
+  cal,
   day,
   editPassword,
   initialTitle = '',
@@ -18,6 +20,7 @@ export default function ArticleForm({
   leaveAfterSave = false,
   secondary,
 }: {
+  cal: number;
   day: number;
   /** 予約・ロック解除のときに入力したパスワード。メモリにだけ持つ */
   editPassword: string;
@@ -42,7 +45,7 @@ export default function ArticleForm({
     setError('');
     setSaved(false);
     try {
-      const res = await fetch(`/api/slots/${day}`, {
+      const res = await fetch(withCal(`/api/slots/${day}`, cal), {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ editPassword, title: title.trim(), url: url.trim() }),

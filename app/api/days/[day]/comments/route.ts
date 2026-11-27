@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { apiError } from '@/lib/errors';
 import { isPublished } from '@/lib/publish';
 import { hitRateLimit } from '@/lib/rateLimit';
-import { getIpHash, parseBody, parseDay, withErrorHandling } from '@/lib/request';
+import { getIpHash, parseBody, parseCal, parseDay, withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 import { commentSchema } from '@/lib/validation';
 
@@ -11,12 +11,14 @@ type Ctx = { params: Promise<{ day: string }> };
 
 export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
   const day = parseDay((await params).day);
+  const calendar = parseCal(req);
   if (!isPublished(day)) throw apiError('NOT_PUBLISHED');
 
   const supabase = db();
   const { data: slot, error: slotError } = await supabase
     .from('slots')
     .select('day, hidden')
+    .eq('calendar', calendar)
     .eq('day', day)
     .maybeSingle();
   if (slotError) throw slotError;
@@ -29,7 +31,7 @@ export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) 
 
   const { data, error } = await supabase
     .from('comments')
-    .insert({ day, name, body, ip_hash: ipHash })
+    .insert({ calendar, day, name, body, ip_hash: ipHash })
     .select('id, name, body, created_at')
     .single();
   if (error) throw error;

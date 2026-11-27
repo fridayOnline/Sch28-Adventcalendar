@@ -5,23 +5,33 @@ import CommentSection from '@/components/CommentSection';
 import Countdown from '@/components/Countdown';
 import ReactionBar from '@/components/ReactionBar';
 import { SiteFooter, SubHeader } from '@/components/SiteHeader';
+import { CALENDAR_COUNT, calendarLabel, calendarPrefix, dayHref, editHref, parseCalParam } from '@/lib/calendars';
 import { currentTime, isPublished, PUBLISH_TIME_LABEL, publishAt, weekdayJa } from '@/lib/publish';
 import { getCalendar, getDayDetail } from '@/lib/queries';
 
-export const revalidate = 60;
+// ?cal= を読むので、リクエストごとに描く
+export const dynamic = 'force-dynamic';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-export default async function DayPage({ params }: { params: Promise<{ day: string }> }) {
+export default async function DayPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ day: string }>;
+  searchParams: Promise<{ cal?: string | string[] }>;
+}) {
   const day = Number((await params).day);
   if (!Number.isInteger(day) || day < 1 || day > 25) notFound();
+  const cal = parseCalParam((await searchParams).cal);
+  if (cal === null) notFound();
 
-  const cells = await getCalendar();
+  const cells = await getCalendar(cal);
   const cell = cells.find((c) => c.day === day);
   if (!cell || cell.state === 'open') notFound();
 
   const published = isPublished(day);
-  const detail = published ? await getDayDetail(day) : null;
+  const detail = published ? await getDayDetail(cal, day) : null;
   if (published && !detail) notFound();
 
   const dateLabel = `12月${day}日（${weekdayJa(day)}）`;
@@ -31,7 +41,7 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
 
   return (
     <>
-      <SubHeader />
+      <SubHeader cal={cal} />
 
       <main className="wrap detail-main">
         <section className="detail-hero">
@@ -41,9 +51,9 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
             {/* 日付（左）と、執筆者向けの「編集」ボタン（右端。カレンダーの箱の「編集」と同じ見た目） */}
             <div className="detail-kicker">
               <p className="label">
-                DAY {pad2(day)} · {dateLabel}
+                {CALENDAR_COUNT > 1 && `${calendarLabel(cal)} · `}DAY {pad2(day)} · {dateLabel}
               </p>
-              <Link className="edit-pill" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
+              <Link className="edit-pill" href={editHref(cal, day)} aria-label={`${calendarPrefix(cal)}12月${day}日の枠を編集`}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 20h4L19 9l-4-4L4 16v4z" />
                   <path d="M13.5 6.5l4 4" />
@@ -89,21 +99,21 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
         {/* 公開前はリアクションもコメントも出さない */}
         {detail && (
           <>
-            <ReactionBar day={day} initial={detail.reactions} />
-            <CommentSection day={day} initial={detail.comments} />
+            <ReactionBar cal={cal} day={day} initial={detail.reactions} />
+            <CommentSection cal={cal} day={day} initial={detail.comments} />
           </>
         )}
 
         <nav aria-label="前後の日" className="day-nav">
           {prev && prev.state !== 'open' ? (
-            <Link href={`/day/${prev.day}`}>
+            <Link href={dayHref(cal, prev.day)}>
               ← 12/{prev.day} {prev.title ?? 'Coming soon'}
             </Link>
           ) : (
             <span />
           )}
           {next && next.state !== 'open' ? (
-            <Link href={`/day/${next.day}`}>
+            <Link href={dayHref(cal, next.day)}>
               12/{next.day} {next.title ?? 'Coming soon'} →
             </Link>
           ) : (

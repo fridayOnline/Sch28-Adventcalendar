@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import type { EmojiSelection } from '@/components/EmojiPicker';
+import { withCal } from '@/lib/calendars';
 import { getClientId } from '@/lib/clientId';
 import { customKey, QUICK_EMOJI_LABELS } from '@/lib/emoji';
 import type { CustomEmoji, ReactionItem } from '@/types';
@@ -27,7 +28,7 @@ const itemOf = (sel: EmojiSelection): ReactionItem =>
     ? { key: customKey(sel.custom.id), emoji: null, custom: sel.custom, count: 0, mine: false }
     : { key: sel.emoji, emoji: sel.emoji, custom: null, count: 0, mine: false };
 
-export default function ReactionBar({ day, initial }: { day: number; initial: ReactionItem[] }) {
+export default function ReactionBar({ cal, day, initial }: { cal: number; day: number; initial: ReactionItem[] }) {
   const [items, setItems] = useState<ReactionItem[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -40,7 +41,7 @@ export default function ReactionBar({ day, initial }: { day: number; initial: Re
   useEffect(() => {
     const clientId = getClientId();
     let alive = true;
-    fetch(`/api/days/${day}?clientId=${encodeURIComponent(clientId)}`)
+    fetch(withCal(`/api/days/${day}?clientId=${encodeURIComponent(clientId)}`, cal))
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (alive && d?.reactions) setItems(d.reactions);
@@ -49,7 +50,7 @@ export default function ReactionBar({ day, initial }: { day: number; initial: Re
     return () => {
       alive = false;
     };
-  }, [day]);
+  }, [cal, day]);
 
   // ピッカーを開くたびにカスタム絵文字の一覧を取り直す（他の人が足したものも出す）
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function ReactionBar({ day, initial }: { day: number; initial: Re
     setError('');
 
     try {
-      const res = await fetch(`/api/days/${day}/reactions`, {
+      const res = await fetch(withCal(`/api/days/${day}/reactions`, cal), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({

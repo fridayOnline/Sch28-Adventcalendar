@@ -5,7 +5,7 @@ import { apiError } from '@/lib/errors';
 import { isPublished } from '@/lib/publish';
 import { getReactionItems } from '@/lib/queries';
 import { hitRateLimit } from '@/lib/rateLimit';
-import { getIpHash, parseBody, parseDay, withErrorHandling } from '@/lib/request';
+import { getIpHash, parseBody, parseCal, parseDay, withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 import { reactionSchema } from '@/lib/validation';
 
@@ -17,12 +17,14 @@ type Ctx = { params: Promise<{ day: string }> };
  */
 export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
   const day = parseDay((await params).day);
+  const calendar = parseCal(req);
   if (!isPublished(day)) throw apiError('NOT_PUBLISHED');
 
   const supabase = db();
   const { data: slot, error: slotError } = await supabase
     .from('slots')
     .select('day, hidden')
+    .eq('calendar', calendar)
     .eq('day', day)
     .maybeSingle();
   if (slotError) throw slotError;
@@ -47,7 +49,11 @@ export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) 
   }
 
   // 新しい種類の絵文字を足すときだけ、種類数の上限を確かめる
-  const { data: existing, error: exErr } = await supabase.from('reactions').select('emoji').eq('day', day);
+  const { data: existing, error: exErr } = await supabase
+    .from('reactions')
+    .select('emoji')
+    .eq('calendar', calendar)
+    .eq('day', day);
   if (exErr) throw exErr;
   const kinds = new Set((existing ?? []).map((r) => r.emoji as string));
   if (!kinds.has(key) && kinds.size >= MAX_REACTION_KINDS) {
@@ -58,8 +64,8 @@ export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) 
   const { data: inserted, error } = await supabase
     .from('reactions')
     .upsert(
-      { day, emoji: key, client_id: clientId, custom_emoji_id: customEmojiId ?? null },
-      { onConflict: 'day,emoji,client_id', ignoreDuplicates: true },
+      { calendar, day, emoji: key, client_id: clientId, custom_emoji_id: customEmojiId ?? null },
+      { onConflict: 'calendar,day,emoji,client_id', ignoreDuplicates: true },
     )
     .select('emoji');
   if (error) throw error;
@@ -68,13 +74,14 @@ export const POST = withErrorHandling(async (req: NextRequest, { params }: Ctx) 
     const { error: delError } = await supabase
       .from('reactions')
       .delete()
+      .eq('calendar', calendar)
       .eq('day', day)
       .eq('emoji', key)
       .eq('client_id', clientId);
     if (delError) throw delError;
   }
 
-  const reactions = await getReactionItems(day, clientId);
+  const reactions = await getReactionItems(calendar, day, clientId);
   revalidatePath('/');
   return Response.json({ reactions });
 });

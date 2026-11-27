@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import type { z } from 'zod';
+import { parseCalParam } from '@/lib/calendars';
 import { ApiException, ERROR_MESSAGES } from '@/lib/errors';
 import type { ErrorCode } from '@/types';
 
@@ -51,6 +52,13 @@ export function parseDay(value: string | undefined): number {
     throw new ApiException('NOT_FOUND');
   }
   return n;
+}
+
+/** ?cal= の検証（無ければ 1枚目）。範囲外なら 404 NOT_FOUND */
+export function parseCal(req: NextRequest): number {
+  const cal = parseCalParam(req.nextUrl.searchParams.get('cal'));
+  if (cal === null) throw new ApiException('NOT_FOUND');
+  return cal;
 }
 
 /** 予期しない例外を 500 に変える */

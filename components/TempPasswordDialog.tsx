@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { calendarPrefix } from '@/lib/calendars';
 
-export type IssuedPassword = { day: number; authorName: string; tempPassword: string };
+export type IssuedPassword = { calendar: number; day: number; authorName: string; tempPassword: string };
 
 /**
  * 管理画面で再発行した仮パスワードを 1 回だけ見せるダイアログ。
@@ -43,7 +44,7 @@ export default function TempPasswordDialog({
       {issued && (
         <>
           <h2 id="pw-dialog-title" className="pw-dialog-title">
-            12月{issued.day}日（{issued.authorName}）の仮パスワード
+            {calendarPrefix(issued.calendar)}12月{issued.day}日（{issued.authorName}）の仮パスワード
           </h2>
           <p className="pw-dialog-text">
             古いパスワードはもう使えません。下の仮パスワードを本人に伝えてください。

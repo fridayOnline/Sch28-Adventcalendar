@@ -19,7 +19,7 @@ export default function CalendarGrid({ cells }: { cells: CalendarCell[] }) {
         <div className="pad" key={`pad-${i}`} aria-hidden="true" />
       ))}
       {cells.map((cell) => (
-        <DayCell key={cell.day} cell={cell} />
+        <DayCell key={`${cell.calendar}-${cell.day}`} cell={cell} />
       ))}
     </div>
   );

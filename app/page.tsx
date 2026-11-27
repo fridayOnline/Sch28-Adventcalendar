@@ -1,5 +1,7 @@
 import CalendarGrid from '@/components/CalendarGrid';
+import CalendarTabs from '@/components/CalendarTabs';
 import { MainHeader, SiteFooter } from '@/components/SiteHeader';
+import { CALENDARS } from '@/lib/calendars';
 import { eventYear } from '@/lib/publish';
 import { getCalendar } from '@/lib/queries';
 
@@ -13,7 +15,7 @@ const STEPS = [
 ] as const;
 
 export default async function HomePage() {
-  const cells = await getCalendar();
+  const calendars = await Promise.all(CALENDARS.map(async (cal) => ({ cal, cells: await getCalendar(cal) })));
 
   return (
     <>
@@ -27,13 +29,19 @@ export default async function HomePage() {
             Calendar <span className="hero-year">{eventYear()}</span>
           </h1>
           <p className="hero-lead">
-            金オンのみんなで、クリスマスをお祝いしよう！12月1日から25日まで、趣味の記事が毎日ひとつずつ公開されます。毎朝6時、小箱の中から誰かの「好き」が届きます。
+            金オンのみんなで、クリスマスをお祝いしよう！12月1日から25日まで、趣味の記事が毎日公開されます。毎朝6時、小箱の中から誰かの「好き」が届きます。
           </p>
         </div>
       </section>
 
       <section id="calendar" className="calendar wrap" aria-label="12月のカレンダー">
-        <CalendarGrid cells={cells} />
+        <CalendarTabs
+          panels={calendars.map(({ cal, cells }) => ({
+            cal,
+            openCount: cells.filter((c) => c.state === 'open').length,
+            content: <CalendarGrid cells={cells} />,
+          }))}
+        />
 
         <ul className="legend" aria-label="凡例">
           <li>

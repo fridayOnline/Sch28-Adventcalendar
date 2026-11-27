@@ -221,6 +221,31 @@ a:hover { color: #5E1013; }
 .hero-lead { margin: 22px 0 0; max-width: 560px; font-size: 17px; font-weight: 700; line-height: 1.85; color: var(--ink-sub); }
 
 .calendar { padding-block: 24px 32px; }
+
+/* ===== カレンダー1｜カレンダー2 のタブ ===== */
+.cal-tabs {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin: 0 0 32px;
+}
+.cal-tab {
+  display: inline-flex; align-items: center; gap: 10px;
+  min-height: 48px; padding: 0 20px;
+  border-radius: 999px; border: 2px solid var(--line);
+  background: #fff; color: var(--ink-sub);
+  font: 700 15px/1 var(--font-ja); cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.cal-tab:hover { border-color: var(--kraft); }
+.cal-tab:focus-visible { outline: 3px solid var(--forest); outline-offset: 2px; }
+.cal-tab[aria-selected="true"] { background: var(--red-ink); border-color: var(--red-ink); color: var(--paper); }
+.cal-tab-count {
+  padding: 4px 9px; border-radius: 999px;
+  background: var(--dash); color: var(--forest);
+  font-size: 12px; line-height: 1;
+}
+.cal-tab-count.is-full { background: #F1E6D4; color: var(--ink-muted); }
+.cal-tab[aria-selected="true"] .cal-tab-count { background: rgba(251, 243, 230, .2); color: var(--paper); }
+
 .howto { padding-block: 72px 40px; }
 .steps {
   list-style: none; margin: 0; padding: 0;

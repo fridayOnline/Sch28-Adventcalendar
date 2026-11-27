@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import BoxArt, { Bow, Flap, SantaHat, Sweet } from '@/components/BoxArt';
+import { dayHref, editHref, entryHref } from '@/lib/calendars';
 import { weekdayEn } from '@/lib/publish';
 import type { CalendarCell } from '@/types';
 
@@ -21,7 +22,7 @@ const HeartIcon = () => (
  * 両方出して、CSS のメディアクエリでどちらか一方だけを表示する。
  */
 export default function DayCell({ cell }: { cell: CalendarCell }) {
-  const { day, state, authorName, title, commentCount, reactionCount, isToday } = cell;
+  const { calendar, day, state, authorName, title, commentCount, reactionCount, isToday } = cell;
   const delay = `${(0.04 + (day - 1) * 0.045).toFixed(3)}s`;
   // 箱が開き始める時刻。登場し終わってから 1日目→N日目 の順に 0.12s ずつずらして開く
   const openAt = `${(0.7 + (day - 1) * 0.12).toFixed(2)}s`;
@@ -33,7 +34,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
       {/* ===== PC：箱 ===== */}
       <div className="cell-pc">
         {state === 'open' && (
-          <Link className="bx bx-open" href={`/entry?day=${day}`} aria-label={`12月${day}日 募集中。予約する`}>
+          <Link className="bx bx-open" href={entryHref(calendar, day)} aria-label={`12月${day}日 募集中。予約する`}>
             <span className="open-cta">＋ 予約する</span>
             <span className="num num-soft">{pad2(day)}</span>
             {isToday && <SantaHat />}
@@ -44,7 +45,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
           <div className="bx bx-wrap">
             <Bow />
             <span className="tag">{authorName}</span>
-            <Link className="edit" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
+            <Link className="edit" href={editHref(calendar, day)} aria-label={`12月${day}日の枠を編集`}>
               編集
             </Link>
             <span className="num">{pad2(day)}</span>
@@ -56,7 +57,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
         )}
 
         {state === 'published' && (
-          <Link className="bx bx-pub opener" href={`/day/${day}`} aria-label={`12月${day}日 ${titleText}（${authorName}）`}>
+          <Link className="bx bx-pub opener" href={dayHref(calendar, day)} aria-label={`12月${day}日 ${titleText}（${authorName}）`}>
             <span className="sweet" aria-hidden="true">
               <Sweet day={day} />
             </span>
@@ -79,7 +80,7 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
 
       {/* ===== スマホ：リストの行 ===== */}
       {state === 'open' && (
-        <Link className="row row-open" href={`/entry?day=${day}`} aria-label={`12月${day}日 募集中。予約する`}>
+        <Link className="row row-open" href={entryHref(calendar, day)} aria-label={`12月${day}日 募集中。予約する`}>
           <BoxArt day={day} state="open" size="thumb" />
           <span className="row-body">
             <span className="row-date">{dateEn}</span>
@@ -97,14 +98,14 @@ export default function DayCell({ cell }: { cell: CalendarCell }) {
             <span className="row-date">{dateEn}</span>
             <span className="row-main">{authorName}</span>
           </span>
-          <Link className="row-edit" href={`/edit?day=${day}`} aria-label={`12月${day}日の枠を編集`}>
+          <Link className="row-edit" href={editHref(calendar, day)} aria-label={`12月${day}日の枠を編集`}>
             編集
           </Link>
         </div>
       )}
 
       {state === 'published' && (
-        <Link className="row" href={`/day/${day}`}>
+        <Link className="row" href={dayHref(calendar, day)}>
           <BoxArt day={day} state="published" size="thumb" />
           <span className="row-body">
             <span className="row-date">{dateEn}</span>

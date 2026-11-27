@@ -5,12 +5,15 @@ import { useState } from 'react';
 import ArticleForm from '@/components/ArticleForm';
 import CalendarLink from '@/components/CalendarLink';
 import BoxArt from '@/components/BoxArt';
+import { homeHref, withCal } from '@/lib/calendars';
 
 export default function EntryForm({
+  cal,
   day,
   dateLabel,
   entryOpen,
 }: {
+  cal: number;
   day: number;
   dateLabel: string;
   entryOpen: boolean;
@@ -32,7 +35,7 @@ export default function EntryForm({
     setSending(true);
     setError('');
     try {
-      const res = await fetch(`/api/slots/${day}`, {
+      const res = await fetch(withCal(`/api/slots/${day}`, cal), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ authorName: name.trim(), editPassword: pw }),
@@ -74,16 +77,17 @@ export default function EntryForm({
         </div>
 
         <ArticleForm
+          cal={cal}
           day={day}
           editPassword={pw}
           submitLabel="保存してカレンダーへ戻る"
           leaveAfterSave
           onSaved={() => {
-            router.push('/');
+            router.push(homeHref(cal));
             router.refresh();
           }}
           secondary={
-            <CalendarLink className="text-link">記事がまだなら、あとで登録する</CalendarLink>
+            <CalendarLink cal={cal} className="text-link">記事がまだなら、あとで登録する</CalendarLink>
           }
         />
       </>
@@ -103,7 +107,7 @@ export default function EntryForm({
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v6M12 17h.01" />
           </svg>
-          {error} <CalendarLink>ほかの日を選ぶ</CalendarLink>
+          {error} <CalendarLink cal={cal}>ほかの日を選ぶ</CalendarLink>
         </div>
       )}
 

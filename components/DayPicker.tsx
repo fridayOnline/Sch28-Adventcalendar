@@ -1,21 +1,26 @@
 import Link from 'next/link';
 import CalendarLink from '@/components/CalendarLink';
+import { CALENDAR_COUNT, entryHref } from '@/lib/calendars';
 import { weekdayJa } from '@/lib/publish';
 import type { CalendarCell } from '@/types';
 
 /** /entry に day が無いときの、空き日の一覧 */
-export default function DayPicker({ cells }: { cells: CalendarCell[] }) {
+export default function DayPicker({ cells, cal = 1 }: { cells: CalendarCell[]; cal?: number }) {
   const open = cells.filter((c) => c.state === 'open');
 
   if (open.length === 0) {
     return (
       <div className="form-card">
         <p style={{ margin: 0, fontSize: 15, lineHeight: 1.8 }}>
-          空いている日がありません。すべての枠が埋まりました。
+          {cal < CALENDAR_COUNT
+            ? '満員御礼🎉 すべての枠が埋まりました。下の次のカレンダーから選んでください。'
+            : '空いている日がありません。すべての枠が埋まりました。'}
         </p>
-        <CalendarLink className="btn">
-          カレンダーへ戻る
-        </CalendarLink>
+        {cal >= CALENDAR_COUNT && (
+          <CalendarLink cal={cal} className="btn">
+            カレンダーへ戻る
+          </CalendarLink>
+        )}
       </div>
     );
   }
@@ -39,7 +44,7 @@ export default function DayPicker({ cells }: { cells: CalendarCell[] }) {
           <li key={c.day} className="cell" style={{ ['--d' as string]: `${(i * 0.04).toFixed(2)}s` } as React.CSSProperties}>
             <Link
               className="bx bx-open"
-              href={`/entry?day=${c.day}`}
+              href={entryHref(c.calendar, c.day)}
               aria-label={`12月${c.day}日（${weekdayJa(c.day)}）を予約する`}
             >
               <span className="open-lbl">

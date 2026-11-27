@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { withCal } from '@/lib/calendars';
 import { getSavedName, saveName } from '@/lib/clientId';
 import type { Comment } from '@/types';
 
@@ -18,9 +19,11 @@ const formatAt = (iso: string) => {
 };
 
 export default function CommentSection({
+  cal,
   day,
   initial,
 }: {
+  cal: number;
   day: number;
   initial: Comment[];
 }) {
@@ -43,7 +46,7 @@ export default function CommentSection({
     setSending(true);
     setError('');
     try {
-      const res = await fetch(`/api/days/${day}/comments`, {
+      const res = await fetch(withCal(`/api/days/${day}/comments`, cal), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), body: body.trim() }),

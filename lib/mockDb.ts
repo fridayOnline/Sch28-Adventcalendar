@@ -22,7 +22,8 @@ type Result = { data: unknown; error: { code?: string; message: string } | null;
 
 // ---------- シードデータ ----------
 
-const SEED: [day: number, author: string, title: string | null][] = [
+// 1枚目は25日すべて埋まっている（本番で満員になった状態の確認用）。2枚目は空きあり
+const SEED: [calendar: number, day: number, author: string, title: string | null][] = ([
   [1, 'yuta', '冬キャンプで焚き火をするために覚えたこと'],
   [2, 'mio', 'ギター初心者が1年でFコードを押さえるまで'],
   [3, 'kenta', '近所の銭湯を20軒まわってみた'],
@@ -33,17 +34,28 @@ const SEED: [day: number, author: string, title: string | null][] = [
   [8, 'yuta', 'Blenderで雪だるまを作る'],
   [9, 'mio', 'フィルムカメラで撮る冬の街'],
   [10, 'taku', null], // URL未登録（「記事準備中」の確認用）
+  [11, 'mei', '手帳を1年使い切るコツ'],
   [12, 'haru', 'ボドゲ会を10回開いてわかったこと'],
   [13, 'yui', '観葉植物を枯らさないコツ'],
+  [14, 'aoi', '純喫茶のプリンを食べ比べ'],
   [15, 'kenta', 'ラーメン二郎の全店制覇計画'],
   [16, 'nana', '朝ランを半年続けた話'],
+  [17, 'taku', 'ミニ四駆に再入門した'],
   [18, 'sora', 'レトロゲーム互換機くらべ'],
   [19, 'ren', '自宅サーバーをRaspberry Piで'],
+  [20, 'yui', '冬の星座を見に行く'],
   [21, 'hana', 'シュトーレンを焼く'],
+  [22, 'haru', 'マーダーミステリーのすすめ'],
   [23, 'riku', '万年筆インクの沼'],
   [24, 'yuta', 'クリスマスに観たい映画10本'],
   [25, 'mio', '今年いちばん良かった買い物'],
-];
+] as const).map(([d, a, t]) => [1, d, a, t] as [number, number, string, string | null]).concat([
+  [2, 2, 'kai', 'はじめてのZINE作り'],
+  [2, 5, 'rin', null], // 2枚目・URL未登録
+  [2, 9, 'sota', '近所の坂道ランキング'],
+  [2, 14, 'mio', '刺繍で年賀状を作る'],
+  [2, 20, 'kenta', '冬のソロ登山の装備'],
+]);
 
 const COMMENTS = [
   ['mio', 'めちゃくちゃわかりやすかったです！'],
@@ -83,13 +95,14 @@ function seed(): Tables {
     customIds.push(id);
   }
 
-  for (const [day, author, title] of SEED) {
+  for (const [calendar, day, author, title] of SEED) {
     const at = new Date(Date.UTC(eventYear(), 10, 20 + (day % 7))).toISOString();
     t.slots.push({
+      calendar,
       day,
       author_name: author,
       title,
-      url: title ? `https://example.com/advent/${day}` : null,
+      url: title ? `https://example.com/advent/${calendar}/${day}` : null,
       edit_key_hash: hash,
       hidden: false,
       created_at: at,
@@ -103,12 +116,12 @@ function seed(): Tables {
     for (let i = 0; i < nComments; i++) {
       const [name, body] = COMMENTS[(day + i) % COMMENTS.length];
       const created = new Date(Math.min(now.getTime(), open.getTime() + (i + 1) * 47 * 60 * 1000));
-      t.comments.push({ id: crypto.randomUUID(), day, name, body, hidden: false, ip_hash: 'mock', created_at: created.toISOString() });
+      t.comments.push({ id: crypto.randomUUID(), calendar, day, name, body, hidden: false, ip_hash: 'mock', created_at: created.toISOString() });
     }
     EMOJIS.forEach((emoji, j) => {
       const n = (day * (j + 3)) % 7;
       for (let k = 0; k < n; k++) {
-        t.reactions.push({ day, emoji, custom_emoji_id: null, client_id: crypto.randomUUID(), created_at: open.toISOString() });
+        t.reactions.push({ calendar, day, emoji, custom_emoji_id: null, client_id: crypto.randomUUID(), created_at: open.toISOString() });
       }
     });
     // 偶数日には 5種類以外の絵文字とカスタム絵文字も付ける（少しあとに押された扱い）
@@ -116,12 +129,12 @@ function seed(): Tables {
       const later = new Date(open.getTime() + 60 * 60 * 1000).toISOString();
       const extra = EXTRA_EMOJIS[day % EXTRA_EMOJIS.length];
       for (let k = 0; k < 1 + (day % 3); k++) {
-        t.reactions.push({ day, emoji: extra, custom_emoji_id: null, client_id: crypto.randomUUID(), created_at: later });
+        t.reactions.push({ calendar, day, emoji: extra, custom_emoji_id: null, client_id: crypto.randomUUID(), created_at: later });
       }
       const cid = customIds[day % Math.max(customIds.length, 1)];
       if (cid) {
         for (let k = 0; k < 1 + (day % 4); k++) {
-          t.reactions.push({ day, emoji: `c:${cid}`, custom_emoji_id: cid, client_id: crypto.randomUUID(), created_at: later });
+          t.reactions.push({ calendar, day, emoji: `c:${cid}`, custom_emoji_id: cid, client_id: crypto.randomUUID(), created_at: later });
         }
       }
     }
@@ -137,14 +150,16 @@ const storage = () => (g.__adventMockStorage ??= new Map());
 const tables = (): Tables => (g.__adventMockDb ??= seed());
 
 
+const sameSlot = (a: Row, b: Row) => a.calendar === b.calendar && a.day === b.day;
+
 /** slot_summaries ビュー相当 */
 function view(name: string): Row[] {
   const t = tables();
   if (name !== 'slot_summaries') return (t as Record<string, Row[]>)[name];
   return t.slots.map((s) => ({
     ...s,
-    comment_count: t.comments.filter((c) => c.day === s.day && !c.hidden).length,
-    reaction_count: t.reactions.filter((r) => r.day === s.day).length,
+    comment_count: t.comments.filter((c) => sameSlot(c, s) && !c.hidden).length,
+    reaction_count: t.reactions.filter((r) => sameSlot(r, s)).length,
   }));
 }
 
@@ -156,13 +171,13 @@ function withDefaults(table: string, row: Row): Row {
   const now = mockNow().toISOString();
   switch (table) {
     case 'slots':
-      return { title: null, url: null, hidden: false, created_at: now, updated_at: now, ...row };
+      return { calendar: 1, title: null, url: null, hidden: false, created_at: now, updated_at: now, ...row };
     case 'comments':
-      return { id: crypto.randomUUID(), name: '名無し', hidden: false, created_at: now, ...row };
+      return { id: crypto.randomUUID(), calendar: 1, name: '名無し', hidden: false, created_at: now, ...row };
     case 'custom_emojis':
       return { id: crypto.randomUUID(), created_at: now, ...row };
     case 'reactions':
-      return { custom_emoji_id: null, created_at: now, ...row };
+      return { calendar: 1, custom_emoji_id: null, created_at: now, ...row };
     case 'rate_limits':
       // レート制限は実時計（lib/rateLimit.ts）と比べるので、ここだけ本当の時刻
       return { id: Date.now() + Math.random(), created_at: new Date().toISOString(), ...row };
@@ -236,7 +251,7 @@ class Query implements PromiseLike<Result> {
         const list = Array.isArray(this.payload) ? this.payload : [this.payload];
         for (const raw of list) {
           const row = withDefaults(this.table, raw);
-          if (this.table === 'slots' && t.slots.some((s) => s.day === row.day)) {
+          if (this.table === 'slots' && t.slots.some((s) => sameSlot(s, row))) {
             return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint "slots_pkey"' } };
           }
           if (this.table === 'custom_emojis' && t.custom_emojis.some((e) => e.name === row.name)) {
@@ -272,9 +287,8 @@ class Query implements PromiseLike<Result> {
         t[this.table] = t[this.table].filter((r) => !this.match(r));
         if (this.table === 'slots') {
           // ON DELETE CASCADE
-          const days = new Set(rows.map((r) => r.day));
-          t.comments = t.comments.filter((c) => !days.has(c.day));
-          t.reactions = t.reactions.filter((r) => !days.has(r.day));
+          t.comments = t.comments.filter((c) => !rows.some((s) => sameSlot(c, s)));
+          t.reactions = t.reactions.filter((r) => !rows.some((s) => sameSlot(r, s)));
         }
         if (this.table === 'custom_emojis') {
           // ON DELETE CASCADE（その絵文字のリアクションも消える）

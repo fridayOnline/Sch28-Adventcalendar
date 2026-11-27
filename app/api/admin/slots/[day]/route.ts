@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache';
 import type { NextRequest } from 'next/server';
 import { apiError } from '@/lib/errors';
 import { requireAdmin } from '@/lib/requireAdmin';
-import { parseBody, parseDay, withErrorHandling } from '@/lib/request';
+import { parseBody, parseCal, parseDay, withErrorHandling } from '@/lib/request';
 import { db } from '@/lib/supabase';
 import { adminSlotPatchSchema } from '@/lib/validation';
 
@@ -12,6 +12,7 @@ type Ctx = { params: Promise<{ day: string }> };
 export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
   await requireAdmin();
   const day = parseDay((await params).day);
+  const calendar = parseCal(req);
   const patch = await parseBody(req, adminSlotPatchSchema);
 
   const update: Record<string, unknown> = {};
@@ -27,6 +28,7 @@ export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx)
   const { data, error } = await db()
     .from('slots')
     .update(update)
+    .eq('calendar', calendar)
     .eq('day', day)
     .select('day')
     .maybeSingle();
@@ -35,15 +37,16 @@ export const PATCH = withErrorHandling(async (req: NextRequest, { params }: Ctx)
 
   revalidatePath('/');
   revalidatePath(`/day/${day}`);
-  return Response.json({ day });
+  return Response.json({ calendar, day });
 });
 
 /** 公開後でも削除できる（コメント・リアクションも消える） */
-export const DELETE = withErrorHandling(async (_req: NextRequest, { params }: Ctx) => {
+export const DELETE = withErrorHandling(async (req: NextRequest, { params }: Ctx) => {
   await requireAdmin();
   const day = parseDay((await params).day);
+  const calendar = parseCal(req);
 
-  const { error } = await db().from('slots').delete().eq('day', day);
+  const { error } = await db().from('slots').delete().eq('calendar', calendar).eq('day', day);
   if (error) throw error;
 
   revalidatePath('/');

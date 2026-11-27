@@ -1,9 +1,10 @@
+import type { NextRequest } from 'next/server';
 import { getCalendar } from '@/lib/queries';
-import { withErrorHandling } from '@/lib/request';
+import { parseCal, withErrorHandling } from '@/lib/request';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withErrorHandling(async () => {
-  const cells = await getCalendar();
+export const GET = withErrorHandling(async (req: NextRequest) => {
+  const cells = await getCalendar(parseCal(req));
   return Response.json(cells);
 });

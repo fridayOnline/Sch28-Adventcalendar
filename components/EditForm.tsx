@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ArticleForm from '@/components/ArticleForm';
 import PasswordChange from '@/components/PasswordChange';
+import { homeHref, withCal } from '@/lib/calendars';
 
 type Unlocked = { authorName: string; title: string | null; url: string | null };
 
-export default function EditForm({ day }: { day: number }) {
+export default function EditForm({ cal, day, dateLabel }: { cal: number; day: number; dateLabel: string }) {
   const router = useRouter();
   // パスワードはメモリにだけ持ち、保存しない
   const [pw, setPw] = useState('');
@@ -21,7 +22,7 @@ export default function EditForm({ day }: { day: number }) {
     setBusy(true);
     setError('');
     try {
-      const res = await fetch(`/api/slots/${day}/verify`, {
+      const res = await fetch(withCal(`/api/slots/${day}/verify`, cal), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ editPassword: pw }),
@@ -37,11 +38,11 @@ export default function EditForm({ day }: { day: number }) {
   }
 
   async function cancelReservation() {
-    if (!confirm(`12月${day}日の予約を取り消します。よろしいですか？`)) return;
+    if (!confirm(`${dateLabel}の予約を取り消します。よろしいですか？`)) return;
     setBusy(true);
     setError('');
     try {
-      const res = await fetch(`/api/slots/${day}`, {
+      const res = await fetch(withCal(`/api/slots/${day}`, cal), {
         method: 'DELETE',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ editPassword: pw }),
@@ -50,7 +51,7 @@ export default function EditForm({ day }: { day: number }) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error?.message ?? 'エラーが起きました');
       }
-      router.push('/');
+      router.push(homeHref(cal));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが起きました');
@@ -98,6 +99,7 @@ export default function EditForm({ day }: { day: number }) {
   return (
     <>
       <ArticleForm
+        cal={cal}
         day={day}
         editPassword={pw}
         initialTitle={slot.title ?? ''}
@@ -105,7 +107,7 @@ export default function EditForm({ day }: { day: number }) {
         onSaved={() => router.refresh()}
       />
 
-      <PasswordChange day={day} currentPassword={pw} onChanged={setPw} />
+      <PasswordChange cal={cal} day={day} currentPassword={pw} onChanged={setPw} />
       {error && (
         <p role="alert" className="err" style={{ marginTop: 16 }}>
           {error}

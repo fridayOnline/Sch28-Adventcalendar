@@ -2,6 +2,8 @@ export type SlotState = 'open' | 'reserved' | 'published';
 
 /** カレンダーの1マス（公開前は title/url が必ず null） */
 export type CalendarCell = {
+  /** 何枚目のカレンダーか（1〜） */
+  calendar: number;
   day: number;
   state: SlotState;
   authorName: string | null;
@@ -40,6 +42,7 @@ export type ReactionItem = {
 };
 
 export type DayDetail = {
+  calendar: number;
   day: number;
   authorName: string;
   title: string | null;
@@ -65,6 +68,7 @@ export type ApiError = { error: { code: ErrorCode; message: string } };
 
 /** 管理画面用（公開前の内容も含む） */
 export type AdminSlot = {
+  calendar: number;
   day: number;
   authorName: string;
   title: string | null;
@@ -77,6 +81,7 @@ export type AdminSlot = {
 
 export type AdminComment = {
   id: string;
+  calendar: number;
   day: number;
   name: string;
   body: string;
@@ -95,4 +100,6 @@ export type AdminOverview = {
   comments: AdminComment[];
   customEmojis: AdminCustomEmoji[];
   entryOpen: boolean;
+  /** CALENDAR_COUNT（管理画面のタブ用） */
+  calendarCount: number;
 };

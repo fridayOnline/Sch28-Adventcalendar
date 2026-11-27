@@ -1,5 +1,6 @@
 import 'server-only';
 import { db } from '@/lib/supabase';
+import { CALENDARS } from '@/lib/calendars';
 import { currentTime, isPublished, todayDay } from '@/lib/publish';
 import { isCustomKey } from '@/lib/emoji';
 import type {
@@ -16,6 +17,7 @@ import type {
 } from '@/types';
 
 type SummaryRow = {
+  calendar: number;
   day: number;
   author_name: string;
   title: string | null;
@@ -46,11 +48,16 @@ export async function listCustomEmojis(): Promise<CustomEmoji[]> {
  * その日のリアクションを絵文字ごとにまとめる。最初に押された順に並べる（Slack と同じ）。
  * clientId を渡すと、そのブラウザが押しているかどうか（mine）も付ける。
  */
-export async function getReactionItems(day: number, clientId?: string): Promise<ReactionItem[]> {
+export async function getReactionItems(
+  calendar: number,
+  day: number,
+  clientId?: string,
+): Promise<ReactionItem[]> {
   const supabase = db();
   const { data, error } = await supabase
     .from('reactions')
     .select('emoji, client_id, custom_emoji_id, created_at')
+    .eq('calendar', calendar)
     .eq('day', day);
   if (error) throw error;
 
@@ -87,11 +94,12 @@ export async function getReactionItems(day: number, clientId?: string): Promise<
     });
 }
 
-/** slot_summaries を読み1〜25日を埋める。公開前は title/url を null、hidden の枠は open 扱い */
-export async function getCalendar(now = currentTime()): Promise<CalendarCell[]> {
+/** そのカレンダーの slot_summaries を読み1〜25日を埋める。公開前は title/url を null、hidden の枠は open 扱い */
+export async function getCalendar(calendar: number, now = currentTime()): Promise<CalendarCell[]> {
   const { data, error } = await db()
     .from('slot_summaries')
-    .select('day, author_name, title, url, hidden, comment_count, reaction_count');
+    .select('calendar, day, author_name, title, url, hidden, comment_count, reaction_count')
+    .eq('calendar', calendar);
   if (error) throw error;
 
   const rows = new Map<number, SummaryRow>();
@@ -107,6 +115,7 @@ export async function getCalendar(now = currentTime()): Promise<CalendarCell[]> 
     const state: SlotState = isOpen ? 'open' : published ? 'published' : 'reserved';
 
     cells.push({
+      calendar,
       day,
       state,
       authorName: isOpen ? null : row!.author_name,
@@ -123,6 +132,7 @@ export async function getCalendar(now = currentTime()): Promise<CalendarCell[]> 
 
 /** 公開前・未予約・hidden なら null */
 export async function getDayDetail(
+  calendar: number,
   day: number,
   clientId?: string,
   now = currentTime(),
@@ -132,7 +142,8 @@ export async function getDayDetail(
   const supabase = db();
   const { data: slot, error } = await supabase
     .from('slots')
-    .select('day, author_name, title, url, hidden')
+    .select('calendar, day, author_name, title, url, hidden')
+    .eq('calendar', calendar)
     .eq('day', day)
     .maybeSingle();
   if (error) throw error;
@@ -142,11 +153,12 @@ export async function getDayDetail(
     supabase
       .from('comments')
       .select('id, name, body, created_at')
+      .eq('calendar', calendar)
       .eq('day', day)
       .eq('hidden', false)
       .order('created_at', { ascending: false })
       .limit(100),
-    getReactionItems(day, clientId),
+    getReactionItems(calendar, day, clientId),
   ]);
 
   const comments: Comment[] = (commentRows ?? []).map((c) => ({
@@ -157,6 +169,7 @@ export async function getDayDetail(
   }));
 
   return {
+    calendar,
     day: slot.day as number,
     authorName: slot.author_name as string,
     title: slot.title as string | null,
@@ -195,11 +208,10 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
   ] = await Promise.all([
       supabase
         .from('slot_summaries')
-        .select('day, author_name, title, url, hidden, comment_count, reaction_count')
-        .order('day'),
+        .select('calendar, day, author_name, title, url, hidden, comment_count, reaction_count'),
       supabase
         .from('comments')
-        .select('id, day, name, body, hidden, created_at')
+        .select('id, calendar, day, name, body, hidden, created_at')
         .order('created_at', { ascending: false })
         .limit(500),
       isEntryOpen(),
@@ -226,14 +238,15 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
     useCount: useCount.get(r.id) ?? 0,
   }));
 
-  const byDay = new Map<number, SummaryRow>();
-  for (const r of (summaries ?? []) as SummaryRow[]) byDay.set(r.day, r);
+  const byKey = new Map<string, SummaryRow>();
+  for (const r of (summaries ?? []) as SummaryRow[]) byKey.set(`${r.calendar}:${r.day}`, r);
 
   const slots: AdminSlot[] = [];
-  for (let day = 1; day <= 25; day++) {
-    const row = byDay.get(day);
+  for (const calendar of CALENDARS) for (let day = 1; day <= 25; day++) {
+    const row = byKey.get(`${calendar}:${day}`);
     if (!row) {
       slots.push({
+        calendar,
         day,
         authorName: '',
         title: null,
@@ -246,6 +259,7 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
       continue;
     }
     slots.push({
+      calendar,
       day,
       authorName: row.author_name,
       title: row.title,
@@ -259,6 +273,7 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
 
   const comments: AdminComment[] = (commentRows ?? []).map((c) => ({
     id: c.id as string,
+    calendar: c.calendar as number,
     day: c.day as number,
     name: c.name as string,
     body: c.body as string,
@@ -266,5 +281,5 @@ export async function getAdminOverview(now = currentTime()): Promise<AdminOvervi
     createdAt: c.created_at as string,
   }));
 
-  return { slots, comments, customEmojis, entryOpen };
+  return { slots, comments, customEmojis, entryOpen, calendarCount: CALENDARS.length };
 }

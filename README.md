@@ -17,7 +17,7 @@ Next.js 16（App Router・React 19）+ Supabase（PostgreSQL）+ Vercel。
 npm install
 ```
 
-2. Supabase でプロジェクトを作り、`supabase/migrations/` の SQL を番号順（`0001_init.sql` → `0002_custom_emojis.sql`）に SQL Editor に貼って実行する。`0002` で Storage に公開バケット `emojis` もできる
+2. Supabase でプロジェクトを作り、`supabase/migrations/` の SQL を番号順（`0001_init.sql` → `0002_custom_emojis.sql` → `0003_second_calendar.sql`）に SQL Editor に貼って実行する。`0002` で Storage に公開バケット `emojis` もできる。`0003` で2枚目のカレンダー（`calendar` 列）が入る。既存の枠は1枚目のまま残る
 
 3. `.env.example` をコピーして `.env.local` を作り、値を埋める
 
@@ -71,7 +71,7 @@ DEV_NOW=2026-12-12T09:00:00+09:00 npm run dev             # 本物のDBのまま
 
 | パス | 画面 |
 | --- | --- |
-| `/` | カレンダー。25マス。空き枠は「募集中」 |
+| `/` | カレンダー。25マス。空き枠は「募集中」。「カレンダー1｜カレンダー2」のタブで切り替え（2枚目は `/?cal=2`） |
 | `/day/[day]` | その日の詳細。リアクション（Slack 式・カスタム絵文字あり）とコメント（公開前は Coming soon のみ） |
 | `/entry?day=N` | 枠の予約。`day` なしなら空き日の一覧から選ぶ。予約できたら続けて記事タイトルとURLを入れ、保存してカレンダーへ戻る（あとで登録も可） |
 | `/edit?day=N` | 記事の登録・編集。編集用パスワードでロック解除。解除後にパスワードの変更もできる |
