@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import type { EmojiSelection } from '@/components/EmojiPicker';
+import { markCalendarStale } from '@/lib/calendarStale';
 import { withCal } from '@/lib/calendars';
 import { getClientId } from '@/lib/clientId';
 import { customKey, QUICK_EMOJI_LABELS } from '@/lib/emoji';
@@ -99,6 +100,7 @@ export default function ReactionBar({ cal, day, initial }: { cal: number; day: n
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error?.message ?? 'エラーが起きました');
+      markCalendarStale(); // カレンダーのリアクション数
       setItems(data.reactions);
     } catch (e) {
       setItems(prev); // 失敗したら元に戻す

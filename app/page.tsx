@@ -1,5 +1,6 @@
 import CalendarGrid from '@/components/CalendarGrid';
 import CalendarTabs from '@/components/CalendarTabs';
+import RefreshWhenStale from '@/components/RefreshWhenStale';
 import { MainHeader, SiteFooter } from '@/components/SiteHeader';
 import { CALENDARS } from '@/lib/calendars';
 import { eventYear } from '@/lib/publish';
@@ -20,6 +21,7 @@ export default async function HomePage() {
   return (
     <>
       <MainHeader />
+      <RefreshWhenStale />
 
       <section className="hero wrap">
         <div className="hero-text">

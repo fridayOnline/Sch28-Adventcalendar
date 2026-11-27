@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { markCalendarStale } from '@/lib/calendarStale';
 import { withCal } from '@/lib/calendars';
 
 /**
@@ -52,6 +53,7 @@ export default function ArticleForm({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error?.message ?? 'エラーが起きました');
+      markCalendarStale();
       onSaved?.();
       if (leaveAfterSave) return; // 画面が切り替わるまでボタンは押せないままにする
       setSaved(true);

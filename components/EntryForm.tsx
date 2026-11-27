@@ -5,6 +5,7 @@ import { useState } from 'react';
 import ArticleForm from '@/components/ArticleForm';
 import CalendarLink from '@/components/CalendarLink';
 import BoxArt from '@/components/BoxArt';
+import { markCalendarStale } from '@/lib/calendarStale';
 import { homeHref, withCal } from '@/lib/calendars';
 
 export default function EntryForm({
@@ -44,6 +45,7 @@ export default function EntryForm({
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? 'エラーが起きました');
       }
+      markCalendarStale();
       // ここで router.refresh() すると、埋まった日の /entry はカレンダーへ飛ばされるので呼ばない
       setDone(true);
     } catch (err) {

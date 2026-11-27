@@ -237,14 +237,16 @@ a:hover { color: #5E1013; }
 }
 .cal-tab:hover { border-color: var(--kraft); }
 .cal-tab:focus-visible { outline: 3px solid var(--forest); outline-offset: 2px; }
-.cal-tab[aria-selected="true"] { background: var(--red-ink); border-color: var(--red-ink); color: var(--paper); }
+/* トップのタブ（data-cal-tab あり）の選択色は CalendarTabs が <html data-cal> から出す（JS が動く前から正しくするため）。
+   ここは管理画面など、aria-selected で切り替えるタブ用 */
+.cal-tab:not([data-cal-tab])[aria-selected="true"] { background: var(--red-ink); border-color: var(--red-ink); color: var(--paper); }
+.cal-tab:not([data-cal-tab])[aria-selected="true"] .cal-tab-count { background: rgba(251, 243, 230, .2); color: var(--paper); }
 .cal-tab-count {
   padding: 4px 9px; border-radius: 999px;
   background: var(--dash); color: var(--forest);
   font-size: 12px; line-height: 1;
 }
 .cal-tab-count.is-full { background: #F1E6D4; color: var(--ink-muted); }
-.cal-tab[aria-selected="true"] .cal-tab-count { background: rgba(251, 243, 230, .2); color: var(--paper); }
 
 .howto { padding-block: 72px 40px; }
 .steps {

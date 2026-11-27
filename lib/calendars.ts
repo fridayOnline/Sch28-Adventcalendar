@@ -35,3 +35,10 @@ export const homeHref = (cal: number) => withCal('/', cal);
 export const dayHref = (cal: number, day: number) => withCal(`/day/${day}`, cal);
 export const entryHref = (cal: number, day?: number) => withCal(day ? `/entry?day=${day}` : '/entry', cal);
 export const editHref = (cal: number, day: number) => withCal(`/edit?day=${day}`, cal);
+
+/**
+ * 最初の描画より前に <html data-cal="N"> を決める小さなスクリプト（app/layout.tsx の <head> に埋め込む）。
+ * / は静的生成なのでサーバーは ?cal= を知らない。JS の読み込みを待ってから切り替えると、
+ * カレンダー1 が一瞬出てからカレンダー2 に替わり、箱の登場アニメーションが2回見えてしまう。
+ */
+export const CALENDAR_BOOT_SCRIPT = `(function(){try{var n=Number(new URLSearchParams(location.search).get('cal')||1);document.documentElement.dataset.cal=String(Number.isInteger(n)&&n>=1&&n<=${CALENDAR_COUNT}?n:1)}catch(e){}})()`;

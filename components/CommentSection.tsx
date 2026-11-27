@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { markCalendarStale } from '@/lib/calendarStale';
 import { withCal } from '@/lib/calendars';
 import { getSavedName, saveName } from '@/lib/clientId';
 import type { Comment } from '@/types';
@@ -54,6 +55,7 @@ export default function CommentSection({
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error?.message ?? 'エラーが起きました');
 
+      markCalendarStale(); // カレンダーのコメント数
       setComments([data as Comment, ...comments]);
       setBody('');
       // 新しい順なので、投稿したコメントが見えるよう一覧を先頭までスクロール

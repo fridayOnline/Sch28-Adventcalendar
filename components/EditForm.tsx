@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ArticleForm from '@/components/ArticleForm';
 import PasswordChange from '@/components/PasswordChange';
+import { markCalendarStale } from '@/lib/calendarStale';
 import { homeHref, withCal } from '@/lib/calendars';
 
 type Unlocked = { authorName: string; title: string | null; url: string | null };
@@ -51,6 +52,7 @@ export default function EditForm({ cal, day, dateLabel }: { cal: number; day: nu
         const data = await res.json().catch(() => null);
         throw new Error(data?.error?.message ?? 'エラーが起きました');
       }
+      markCalendarStale();
       router.push(homeHref(cal));
       router.refresh();
     } catch (err) {
