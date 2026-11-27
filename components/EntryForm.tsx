@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ArticleForm from '@/components/ArticleForm';
+import CalendarLink from '@/components/CalendarLink';
 import BoxArt from '@/components/BoxArt';
 
 export default function EntryForm({
@@ -83,9 +83,7 @@ export default function EntryForm({
             router.refresh();
           }}
           secondary={
-            <Link className="text-link" href="/">
-              記事がまだなら、あとで登録する
-            </Link>
+            <CalendarLink className="text-link">記事がまだなら、あとで登録する</CalendarLink>
           }
         />
       </>
@@ -105,7 +103,7 @@ export default function EntryForm({
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v6M12 17h.01" />
           </svg>
-          {error} <Link href="/">ほかの日を選ぶ</Link>
+          {error} <CalendarLink>ほかの日を選ぶ</CalendarLink>
         </div>
       )}
 

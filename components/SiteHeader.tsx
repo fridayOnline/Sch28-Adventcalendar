@@ -1,11 +1,12 @@
 import Link from 'next/link';
+import CalendarLink from '@/components/CalendarLink';
 import MobileMenu from '@/components/MobileMenu';
 import { eventYear } from '@/lib/publish';
 
 /** ロゴ（箱のアイコン＋FRION ADVENT CALENDAR 2026）。全ページ共通 */
 export function Brand() {
   return (
-    <Link className="brand" href="/">
+    <CalendarLink className="brand">
       <svg className="brand-icon" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
         <rect x="2" y="2" width="30" height="30" rx="4" fill="#C9A57C" />
         <path d="M17 2v30M2 17h30" stroke="#96701A" strokeWidth="2.4" />
@@ -14,7 +15,7 @@ export function Brand() {
       <span>
         FRION ADVENT CALENDAR <em>{eventYear()}</em>
       </span>
-    </Link>
+    </CalendarLink>
   );
 }
 
@@ -40,12 +41,12 @@ export function SubHeader() {
   return (
     <header className="site-header wrap">
       <Brand />
-      <Link className="back-link" href="/">
+      <CalendarLink className="back-link">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" />
         </svg>
         <span className="back-text">カレンダーに戻る</span>
-      </Link>
+      </CalendarLink>
     </header>
   );
 }
