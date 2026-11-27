@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CalendarLink from '@/components/CalendarLink';
 import { weekdayJa } from '@/lib/publish';
 import type { CalendarCell } from '@/types';
 
@@ -12,9 +13,9 @@ export default function DayPicker({ cells }: { cells: CalendarCell[] }) {
         <p style={{ margin: 0, fontSize: 15, lineHeight: 1.8 }}>
           空いている日がありません。すべての枠が埋まりました。
         </p>
-        <Link className="btn" href="/">
+        <CalendarLink className="btn">
           カレンダーへ戻る
-        </Link>
+        </CalendarLink>
       </div>
     );
   }
